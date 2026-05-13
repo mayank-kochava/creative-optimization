@@ -1,0 +1,27 @@
+from contextlib import asynccontextmanager
+
+import httpx
+from fastapi import FastAPI
+
+from app.config import settings
+from app.routers import health, campaigns, creatives
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    try:
+        async with httpx.AsyncClient() as client:
+            await client.post(
+                f"{settings.ollama_base_url}/api/generate",
+                json={"model": "qwen2.5vl:7b", "prompt": "hi", "stream": False},
+                timeout=30,
+            )
+    except Exception:
+        pass
+    yield
+
+
+app = FastAPI(title="Creative Intelligence Platform", version="1.0.0", lifespan=lifespan)
+app.include_router(health.router)
+app.include_router(campaigns.router)
+app.include_router(creatives.router)

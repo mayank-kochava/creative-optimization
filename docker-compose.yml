@@ -1,0 +1,36 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: creative_opt
+      POSTGRES_USER: appuser
+      POSTGRES_PASSWORD: apppassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U appuser -d creative_opt"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://appuser:apppassword@postgres:5432/creative_opt
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+      STORAGE_PATH: /app/uploads
+    volumes:
+      - ./data/uploads:/app/uploads
+      - ./data/benchmark:/app/benchmark
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pgdata:
