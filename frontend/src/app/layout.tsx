@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import AntdProviders from './AntdProviders';
+import AppHeader from './AppHeader';
 
 export const metadata: Metadata = {
   title: 'Creative Intelligence Platform',
@@ -11,7 +12,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
-        <AntdProviders>{children}</AntdProviders>
+        <AntdProviders>
+          <AppHeader />
+          <main>{children}</main>
+        </AntdProviders>
       </body>
     </html>
   );

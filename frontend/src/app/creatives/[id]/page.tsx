@@ -1,8 +1,4 @@
 'use client';
-import {
-  Badge, Card, Col, List, Row, Space, Spin, Tag, Typography
-} from 'antd';
-import { ArrowLeftOutlined } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { api } from '@/lib/api';
@@ -12,25 +8,12 @@ import { FatigueBadge } from '@/components/FatigueBadge';
 import { KPITable } from '@/components/KPITable';
 import { ScoreRadar } from '@/components/ScoreRadar';
 
-const { Title, Paragraph, Text } = Typography;
-
-interface Props {
-  params: { id: string };
-}
-
-const STRATEGY_COLORS: Record<string, string> = {
-  fear_appeal: 'red', fomo: 'orange', aspirational: 'blue',
-  social_proof: 'green', rational: 'purple', unknown: 'default',
-};
-
-const EMOTION_COLORS: Record<string, string> = {
-  excitement: 'gold', fear: 'red', trust: 'blue',
-  joy: 'green', sadness: 'cyan', neutral: 'default', unknown: 'default',
-};
+interface Props { params: { id: string } }
 
 export default function CreativeDetailPage({ params }: Props) {
   const router = useRouter();
   const creativeId = Number(params.id);
+
   const { data: creative, isLoading } = useSWR(
     `creative-${creativeId}`,
     () => api.getCreative(creativeId),
@@ -42,103 +25,150 @@ export default function CreativeDetailPage({ params }: Props) {
   );
 
   if (isLoading || !creative) {
-    return <Spin size="large" style={{ display: 'block', margin: '80px auto' }} />;
+    return <div className="spin-wrap"><div className="spin" /></div>;
   }
 
   const imageUrl = `/api/creatives/${creativeId}/image`;
+  const score = creative.analysis?.overall_score ?? null;
 
   return (
-    <div>
-      <Space style={{ marginBottom: 16 }}>
-        <a onClick={() => router.back()} style={{ cursor: 'pointer' }}>
-          <ArrowLeftOutlined /> Back
-        </a>
-        <Title level={4} style={{ margin: 0 }}>{creative.filename}</Title>
-        <Tag>{creative.format.toUpperCase()}</Tag>
-        {creative.width && <Text type="secondary">{creative.width}×{creative.height}</Text>}
-        <FatigueBadge status={creative.fatigue_status} />
-      </Space>
+    <div className="page">
+      <div className="bc">
+        <span className="bc-link" onClick={() => router.push('/')}>Dashboard</span>
+        <span className="bc-sep">/</span>
+        <span className="bc-link" onClick={() => router.back()}>Campaign</span>
+        <span className="bc-sep">/</span>
+        <span style={{ color: 'var(--text)' }}>{creative.filename}</span>
+      </div>
+
+      <div className="pg-hdr" style={{ marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <div className="pg-title">{creative.filename}</div>
+          <span className="ftag">{creative.format.toUpperCase()}</span>
+          {creative.width && (
+            <span style={{ color: 'var(--text-2)', fontSize: 13 }}>
+              {creative.width}×{creative.height}
+            </span>
+          )}
+          <FatigueBadge status={creative.fatigue_status} />
+        </div>
+      </div>
 
       <DuplicateAlert duplicates={duplicates} currentCreativeId={creativeId} />
 
-      <Row gutter={[24, 24]}>
-        <Col xs={24} md={10}>
-          <Card title="Creative Preview">
-            <AnnotatedImage
-              imageUrl={imageUrl}
-              annotations={creative.annotations}
-              width={creative.width ?? 400}
-              height={creative.height ?? 300}
-            />
-          </Card>
-        </Col>
-
-        <Col xs={24} md={14}>
-          {!creative.analysis ? (
-            <Card>
-              <Spin tip="Analysing creative…" />
-            </Card>
-          ) : (
-            <Space direction="vertical" style={{ width: '100%' }} size="middle">
-              <Card title={`Overall Score: ${creative.analysis.overall_score}/10`}>
-                <Space style={{ marginBottom: 16 }}>
-                  <Tag color={STRATEGY_COLORS[creative.analysis.persuasion_strategy] ?? 'default'}>
-                    {creative.analysis.persuasion_strategy.replace(/_/g, ' ')}
-                  </Tag>
-                  <Tag color={EMOTION_COLORS[creative.analysis.dominant_emotion] ?? 'default'}>
-                    {creative.analysis.dominant_emotion}
-                  </Tag>
-                  {creative.analysis.benchmark_percentile && (
-                    <Badge
-                      count={`Top ${100 - creative.analysis.benchmark_percentile}%`}
-                      style={{ backgroundColor: '#52c41a' }}
-                    />
-                  )}
-                </Space>
-                <ScoreRadar scores={creative.analysis.scores} />
-              </Card>
-
-              <Card title="Analysis">
-                <Paragraph>{creative.analysis.explanation}</Paragraph>
-                <Row gutter={16}>
-                  <Col span={12}>
-                    <Title level={5}>Strengths</Title>
-                    <List
-                      size="small"
-                      dataSource={creative.analysis.strengths}
-                      renderItem={(item: string) => <List.Item>✓ {item}</List.Item>}
-                    />
-                  </Col>
-                  <Col span={12}>
-                    <Title level={5}>Weaknesses</Title>
-                    <List
-                      size="small"
-                      dataSource={creative.analysis.weaknesses}
-                      renderItem={(item: string) => <List.Item>✗ {item}</List.Item>}
-                    />
-                  </Col>
-                </Row>
-              </Card>
-
-              <Card title="Recommendations">
-                <List
-                  dataSource={creative.analysis.recommendations}
-                  renderItem={(item: string, i: number) => (
-                    <List.Item>
-                      <Text strong>{i + 1}.</Text> {item}
-                    </List.Item>
-                  )}
+      <div className="d-grid">
+        {/* Left: image with annotations */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+          <div className="panel">
+            <div className="ph">
+              Creative Preview
+              <span className="ann-legend">
+                <span><i style={{ border: '2px solid #1677FF' }} />Face</span>
+                <span><i style={{ border: '2px solid #27AE60' }} />Text</span>
+                <span><i style={{ border: '2px solid #C0392B' }} />CTA</span>
+              </span>
+            </div>
+            <div className="pb" style={{ padding: 14 }}>
+              <div className="img-wrap">
+                <AnnotatedImage
+                  imageUrl={imageUrl}
+                  annotations={creative.annotations}
+                  width={creative.width ?? 400}
+                  height={creative.height ?? 300}
                 />
-              </Card>
-            </Space>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right: score + analysis */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {!creative.analysis ? (
+            <div className="panel">
+              <div className="pb" style={{ textAlign: 'center', padding: 40 }}>
+                <div className="spin" style={{ margin: '0 auto 12px' }} />
+                <div style={{ color: 'var(--text-2)', fontSize: 13 }}>Analysing creative…</div>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Score hero */}
+              <div className="panel">
+                <div className="score-hero">
+                  <div className="score-big">
+                    {score}<span className="score-denom">/10</span>
+                  </div>
+                  <div className="score-lbl">Overall Score</div>
+                  <div className="a-tags">
+                    <span className="atag atag-s">
+                      {creative.analysis.persuasion_strategy.replace(/_/g, ' ')}
+                    </span>
+                    <span className="atag atag-e">
+                      {creative.analysis.dominant_emotion}
+                    </span>
+                    {creative.analysis.benchmark_percentile && (
+                      <span className="atag atag-p">
+                        Top {100 - creative.analysis.benchmark_percentile}%
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="radar-wrap">
+                  <ScoreRadar scores={creative.analysis.scores} />
+                </div>
+              </div>
+
+              {/* Analysis */}
+              <div className="panel">
+                <div className="ph">Analysis</div>
+                <div className="pb">
+                  <div className="expl">{creative.analysis.explanation}</div>
+                  <div className="sw-g">
+                    <div>
+                      <div className="sw-h">Strengths</div>
+                      {creative.analysis.strengths.map((s: string, i: number) => (
+                        <div key={i} className="sw-row">
+                          <span className="sw-ic ic-g">✓</span>{s}
+                        </div>
+                      ))}
+                    </div>
+                    <div>
+                      <div className="sw-h">Weaknesses</div>
+                      {creative.analysis.weaknesses.map((w: string, i: number) => (
+                        <div key={i} className="sw-row">
+                          <span className="sw-ic ic-r">✗</span>{w}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Recommendations */}
+              <div className="panel">
+                <div className="ph">Recommendations</div>
+                <div className="pb">
+                  <ul className="rec">
+                    {creative.analysis.recommendations.map((r: string, i: number) => (
+                      <li key={i}>
+                        <span className="rec-n">{i + 1}</span>{r}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </>
           )}
-        </Col>
-      </Row>
+        </div>
+      </div>
 
       {creative.kpi && (
-        <Card title="Performance (Last 30 Days)" style={{ marginTop: 24 }}>
-          <KPITable kpi={creative.kpi} />
-        </Card>
+        <div className="panel" style={{ marginTop: 0 }}>
+          <div className="ph">Performance — Last 30 Days</div>
+          <div className="pb">
+            <KPITable kpi={creative.kpi} />
+          </div>
+        </div>
       )}
     </div>
   );

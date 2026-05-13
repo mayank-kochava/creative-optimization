@@ -1,73 +1,101 @@
 'use client';
-import { Alert, Upload, message } from 'antd';
-import { InboxOutlined } from '@ant-design/icons';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { api, UploadResponse } from '@/lib/api';
-
-const { Dragger } = Upload;
 
 interface Props {
   campaignId: number;
   onSuccess: () => void;
+  compact?: boolean;
 }
 
-export function CreativeUpload({ campaignId, onSuccess }: Props) {
+export function CreativeUpload({ campaignId, onSuccess, compact = true }: Props) {
+  const inputRef = useRef<HTMLInputElement>(null);
   const [result, setResult] = useState<UploadResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [dragging, setDragging] = useState(false);
 
-  const handleUpload = async (file: File): Promise<boolean> => {
-    setResult(null);
-    setError(null);
+  const upload = async (file: File) => {
+    setResult(null); setError(null);
     try {
       const resp = await api.uploadCreative(campaignId, file);
       setResult(resp);
       onSuccess();
     } catch (err: any) {
-      const msg = err?.response?.data?.detail || 'Upload failed';
-      setError(msg);
+      setError(err?.response?.data?.detail || 'Upload failed');
     }
-    return false;
+  };
+
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault(); setDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) upload(file);
   };
 
   return (
     <div>
-      <Dragger
+      <input
+        ref={inputRef} type="file"
         accept=".jpg,.jpeg,.png,.webp,.gif,.mp4,.mov"
-        multiple={false}
-        beforeUpload={handleUpload}
-        showUploadList={false}
-      >
-        <p className="ant-upload-drag-icon"><InboxOutlined /></p>
-        <p className="ant-upload-text">Click or drag creative to upload</p>
-        <p className="ant-upload-hint">Supports: JPG, PNG, WebP, GIF, MP4, MOV · Max 20MB images, 500MB video</p>
-      </Dragger>
+        style={{ display: 'none' }}
+        onChange={e => { const f = e.target.files?.[0]; if (f) upload(f); }}
+      />
+
+      {compact ? (
+        <div
+          className={`drop-compact${dragging ? ' drop-active' : ''}`}
+          onClick={() => inputRef.current?.click()}
+          onDragOver={e => { e.preventDefault(); setDragging(true); }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={onDrop}
+        >
+          <span className="drop-icon">📤</span>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
+              Drop creative here to upload
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--text-2)', marginTop: 2 }}>
+              JPG · PNG · WebP · GIF · MP4 · MOV · Max 20MB image / 500MB video
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div
+          className={`drop-big${dragging ? ' drop-active' : ''}`}
+          onClick={() => inputRef.current?.click()}
+          onDragOver={e => { e.preventDefault(); setDragging(true); }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={onDrop}
+        >
+          <div className="icon">📤</div>
+          <div style={{ fontWeight: 600, marginBottom: 6 }}>Click or drag to upload</div>
+          <div style={{ fontSize: 12, color: 'var(--text-2)' }}>
+            JPG · PNG · WebP · GIF · MP4 · MOV
+          </div>
+        </div>
+      )}
 
       {result && !result.duplicate_detected && (
-        <Alert
-          style={{ marginTop: 12 }}
-          type="info"
-          message="Upload successful"
-          description="Analysis queued — results appear within 15 seconds."
-          showIcon
-        />
+        <div style={{ marginTop: 10, padding: '10px 14px', background: 'var(--green-bg)', border: '1px solid var(--green-border)', borderRadius: 'var(--r)', fontSize: 13, color: 'var(--green)' }}>
+          ✓ Upload successful — analysis queued, results in ~15 seconds.
+        </div>
       )}
 
       {result?.duplicate_detected && (
-        <Alert
-          style={{ marginTop: 12 }}
-          type="warning"
-          message={`Duplicate detected (Hamming distance: ${result.hamming_distance})`}
-          description={
-            <span>
-              This creative is a {result.duplicate_type?.replace('_', ' ')} duplicate of creative #{result.duplicate_id}.
-            </span>
-          }
-          showIcon
-        />
+        <div className="dup-alert" style={{ marginTop: 10, marginBottom: 0 }}>
+          <span className="al-ic">⚠️</span>
+          <div>
+            <div className="al-ttl">Duplicate detected (Hamming: {result.hamming_distance})</div>
+            <div className="al-desc">
+              {result.duplicate_type?.replace('_', ' ')} of Creative #{result.duplicate_id}
+            </div>
+          </div>
+        </div>
       )}
 
       {error && (
-        <Alert style={{ marginTop: 12 }} type="error" message="Upload failed" description={error} showIcon />
+        <div style={{ marginTop: 10, padding: '10px 14px', background: 'var(--red-bg)', border: '1px solid var(--red-border)', borderRadius: 'var(--r)', fontSize: 13, color: 'var(--red)' }}>
+          ✗ {error}
+        </div>
       )}
     </div>
   );
