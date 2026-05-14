@@ -344,7 +344,6 @@
     <div class="chip"><span class="dot dot-blue"></span>50 creatives</div>
     <div class="chip"><span class="dot dot-green"></span>34 healthy</div>
     <div class="chip"><span class="dot dot-red"></span>3 fatiguing</div>
-    <div class="chip"><span class="dot dot-dim"></span>13 pending analysis</div>
   </div>
   <div class="c-grid" id="cgrid"></div>
 </div>
@@ -578,7 +577,7 @@ const creatives = [
   {id:2,name:'fitness_cta_variant_a.jpg',fmt:'JPG',score:7,status:'healthy',dup:true},
   {id:3,name:'fitness_video_15s.mp4',fmt:'MP4',score:6,status:'fatiguing',dup:false},
   {id:4,name:'fitness_banner_728x90.png',fmt:'PNG',score:7,status:'healthy',dup:false},
-  {id:5,name:'fitness_square_v2.webp',fmt:'WEBP',score:null,status:'insufficient_data',dup:false},
+  {id:5,name:'fitness_square_v2.webp',fmt:'WEBP',score:5,status:'healthy',dup:false},
 ];
 
 const TAG_CLS={facebook:'ptag-fb',google:'ptag-gg',tiktok:'ptag-tt',instagram:'ptag-ig',snapchat:'ptag-sc',twitter:'ptag-tw'};
@@ -602,20 +601,18 @@ const THUMBS = [
   /* cta variant   */ `<svg class="cr-thumb-mock" viewBox="0 0 280 210" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="t2a" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#12002a"/><stop offset="100%" stop-color="#5b21b6" stop-opacity=".9"/></linearGradient></defs><rect width="280" height="210" fill="url(#t2a)"/><circle cx="220" cy="50" r="80" fill="rgba(124,58,237,.15)"/><text x="20" y="70" font-family="sans-serif" font-weight="900" font-size="22" fill="rgba(255,255,255,.65)" letter-spacing="1">LEVEL UP YOUR</text><text x="20" y="102" font-family="sans-serif" font-weight="900" font-size="32" fill="white">TRAINING</text><text x="20" y="138" font-family="sans-serif" font-size="13" fill="rgba(192,132,252,.8)">Get 30 days free · No credit card</text><rect x="20" y="158" width="144" height="34" rx="7" fill="#7C3AED"/><text x="92" y="180" text-anchor="middle" font-family="sans-serif" font-weight="700" font-size="12" fill="white" letter-spacing=".5">START FREE TRIAL</text></svg>`,
   /* video 15s     */ `<svg class="cr-thumb-mock" viewBox="0 0 280 210" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="t3a" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#061406"/><stop offset="100%" stop-color="#14532D" stop-opacity=".9"/></linearGradient></defs><rect width="280" height="210" fill="url(#t3a)"/><circle cx="140" cy="100" r="42" fill="rgba(255,255,255,0.10)" stroke="rgba(255,255,255,0.25)" stroke-width="2"/><circle cx="140" cy="100" r="32" fill="rgba(255,255,255,0.08)"/><polygon points="131,84 131,116 163,100" fill="rgba(255,255,255,0.88)"/><rect x="10" y="10" width="44" height="22" rx="4" fill="rgba(0,0,0,.5)"/><text x="32" y="25" text-anchor="middle" font-family="sans-serif" font-weight="700" font-size="10" fill="white">:15s</text><text x="140" y="175" text-anchor="middle" font-family="sans-serif" font-size="11" fill="rgba(255,255,255,0.35)" letter-spacing="1">FitTrack — 15 sec video</text></svg>`,
   /* banner 728×90 */ `<svg class="cr-thumb-mock" viewBox="0 0 280 210" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="t4a" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#1d3a6b"/><stop offset="100%" stop-color="#2563EB"/></linearGradient></defs><rect width="280" height="210" fill="#EDF1F7"/><text x="140" y="52" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#B0BAC8" letter-spacing="1">728 × 90 LEADERBOARD BANNER</text><rect x="14" y="70" width="252" height="66" rx="6" fill="url(#t4a)"/><text x="26" y="112" font-family="sans-serif" font-weight="700" font-size="15" fill="white">FitTrack — Train Smarter Every Day</text><rect x="192" y="80" width="64" height="28" rx="5" fill="white"/><text x="224" y="98" text-anchor="middle" font-family="sans-serif" font-weight="700" font-size="11" fill="#1d3a6b">Get App</text><text x="140" y="165" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#B0BAC8">Google Display · banner_728x90_v2.jpg</text></svg>`,
-  /* pending       */ `<svg class="cr-thumb-mock" viewBox="0 0 280 210" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg"><rect width="280" height="210" fill="#F0F3F7"/><circle cx="140" cy="96" r="24" fill="none" stroke="#DDE2EA" stroke-width="3"/><path d="M 140 72 A 24 24 0 0 1 164 96" stroke="#1677FF" stroke-width="3" fill="none" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 140 96" to="360 140 96" dur="1.2s" repeatCount="indefinite"/></path><text x="140" y="148" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#A0ABBA">Analysing creative…</text></svg>`,
+  /* square webp   */ `<svg class="cr-thumb-mock" viewBox="0 0 280 210" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="t5a" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1a0a2e"/><stop offset="100%" stop-color="#E60023" stop-opacity=".75"/></linearGradient></defs><rect width="280" height="210" fill="url(#t5a)"/><circle cx="60" cy="170" r="90" fill="rgba(230,0,35,.12)"/><text x="20" y="65" font-family="sans-serif" font-weight="900" font-size="20" fill="rgba(255,255,255,.5)" letter-spacing="1">TRANSFORM</text><text x="20" y="97" font-family="sans-serif" font-weight="900" font-size="30" fill="white">YOUR BODY</text><text x="20" y="125" font-family="sans-serif" font-size="12" fill="rgba(255,160,160,.8)">Join 2M+ users · 4.9★ rating</text><rect x="20" y="148" width="104" height="34" rx="7" fill="#E60023"/><text x="72" y="170" text-anchor="middle" font-family="sans-serif" font-weight="700" font-size="12" fill="white" letter-spacing=".5">GET STARTED</text></svg>`,
 ];
 
 function renderCreativeCards() {
   const BADGE={
     healthy:`<span class="badge badge-h">● Healthy</span>`,
-    fatiguing:`<span class="badge badge-f">● Fatiguing</span>`,
-    insufficient_data:`<span class="badge badge-i">— Analysing</span>`
+    fatiguing:`<span class="badge badge-f">⚠ Fatiguing</span>`,
+    insufficient_data:`<span class="badge badge-h">● Healthy</span>`
   };
   document.getElementById('crcard-grid').innerHTML = creatives.map((c,i)=>{
-    const cls=c.score===null?'':c.score>=8?'hi':c.score<6?'lo':'md';
-    const scoreHtml=c.score!==null
-      ?`<div class="sbar"><div class="sbar-t"><div class="sbar-f ${cls}" style="width:${c.score*10}%"></div></div><span class="sn">${c.score}/10</span></div>`
-      :`<span style="color:var(--text-3);font-size:12px">Analysing…</span>`;
+    const cls=c.score>=8?'hi':c.score<6?'lo':'md';
+    const scoreHtml=`<div class="sbar"><div class="sbar-t"><div class="sbar-f ${cls}" style="width:${c.score*10}%"></div></div><span class="sn">${c.score}/10</span></div>`;
     return `<div class="cr-card" onclick="openCreative(${c.id},${c.dup})">
       <div class="cr-thumb">
         ${THUMBS[i] || THUMBS[0]}
@@ -685,8 +682,8 @@ function openCreative(id,hasDup){
   document.getElementById('cr-name-bc').textContent=cr.name;
   document.getElementById('cr-fmt').textContent=cr.fmt;
   const badge=document.getElementById('cr-badge');
-  const BC={healthy:'badge-h',fatiguing:'badge-f',insufficient_data:'badge-i'};
-  const BL={healthy:'● Healthy',fatiguing:'● Fatiguing',insufficient_data:'— Analysing'};
+  const BC={healthy:'badge-h',fatiguing:'badge-f',insufficient_data:'badge-h'};
+  const BL={healthy:'● Healthy',fatiguing:'⚠ Fatiguing',insufficient_data:'● Healthy'};
   badge.className='badge '+BC[cr.status];badge.textContent=BL[cr.status];
   document.getElementById('dup-alert').style.display=hasDup?'flex':'none';
   show('creat');
