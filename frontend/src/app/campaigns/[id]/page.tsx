@@ -18,6 +18,21 @@ function ScoreBar({ score }: { score: number | null }) {
   );
 }
 
+const FORMAT_GRADIENT: Record<string, string> = {
+  mp4: 'linear-gradient(135deg,#0B1C0B,#14532D)',
+  mov: 'linear-gradient(135deg,#0B1C0B,#14532D)',
+  jpg: 'linear-gradient(135deg,#071121,#1e3a5f)',
+  jpeg: 'linear-gradient(135deg,#071121,#1e3a5f)',
+  png: 'linear-gradient(135deg,#1B0033,#4c1d95)',
+  webp: 'linear-gradient(135deg,#1a1a2e,#6B21A8)',
+  gif: 'linear-gradient(135deg,#1a0a0a,#7f1d1d)',
+};
+
+const PTAG: Record<string, string> = {
+  facebook: 'ptag-fb', google: 'ptag-gg', tiktok: 'ptag-tt',
+  instagram: 'ptag-ig', linkedin: 'ptag-li', pinterest: 'ptag-pi',
+};
+
 export default function CampaignPage({ params }: Props) {
   const router = useRouter();
   const id = Number(params.id);
@@ -27,10 +42,7 @@ export default function CampaignPage({ params }: Props) {
     () => api.getCampaignCreatives(id)
   );
 
-  const PTAG: Record<string, string> = {
-    facebook: 'ptag-fb', google: 'ptag-gg', tiktok: 'ptag-tt',
-    instagram: 'ptag-ig', linkedin: 'ptag-li', pinterest: 'ptag-pi',
-  };
+  const isVideo = (fmt: string) => ['mp4', 'mov'].includes(fmt.toLowerCase());
 
   return (
     <div className="page">
@@ -68,36 +80,42 @@ export default function CampaignPage({ params }: Props) {
       {isLoading ? (
         <div className="spin-wrap"><div className="spin" /></div>
       ) : (
-        <div className="tbl-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Creative</th>
-                <th>Format</th>
-                <th style={{ width: 240 }}>AI Score</th>
-                <th>Fatigue Status</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {(creatives ?? []).map((c: CreativeSummary) => (
-                <tr key={c.id} onClick={() => router.push(`/creatives/${c.id}`)}>
-                  <td style={{ fontWeight: 500 }}>{c.filename}</td>
-                  <td><span className="ftag">{c.format.toUpperCase()}</span></td>
-                  <td><ScoreBar score={c.overall_score} /></td>
-                  <td><FatigueBadge status={c.fatigue_status} /></td>
-                  <td>
-                    <button
-                      className="btn btn-s btn-sm"
-                      onClick={e => { e.stopPropagation(); router.push(`/creatives/${c.id}`); }}
-                    >
-                      View Detail
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="cr-grid">
+          {(creatives ?? []).map((c: CreativeSummary) => (
+            <div
+              key={c.id}
+              className="cr-card"
+              onClick={() => router.push(`/creatives/${c.id}`)}
+            >
+              {/* Thumbnail */}
+              <div
+                className="cr-thumb"
+                style={{ background: FORMAT_GRADIENT[c.format.toLowerCase()] ?? FORMAT_GRADIENT.jpg }}
+              >
+                {!isVideo(c.format) ? (
+                  <img
+                    src={`/api/creatives/${c.id}/image`}
+                    alt={c.filename}
+                    className="cr-thumb-img"
+                    onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                  />
+                ) : (
+                  <div className="cr-play">▶</div>
+                )}
+                <span className="cr-fmt-ov">{c.format.toUpperCase()}</span>
+                {c.has_duplicate && <span className="cr-dup-ov">DUPE</span>}
+              </div>
+
+              {/* Info */}
+              <div className="cr-body">
+                <div className="cr-fname">{c.filename}</div>
+                <ScoreBar score={c.overall_score} />
+                <div className="cr-foot">
+                  <FatigueBadge status={c.fatigue_status} />
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>

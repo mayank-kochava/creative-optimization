@@ -268,6 +268,48 @@
     /* ── RADAR SVG CONTAINER ── */
     .radar-wrap{padding:10px 4px 4px;display:flex;justify-content:center}
 
+    /* ── CREATIVE CARD GRID ── */
+    .cr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;margin-top:8px}
+    .cr-card{
+      background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);
+      cursor:pointer;overflow:hidden;transition:all .22s cubic-bezier(.25,.46,.45,.94);
+      box-shadow:var(--shadow);display:flex;flex-direction:column;
+    }
+    .cr-card:hover{border-color:var(--blue);transform:translateY(-4px);box-shadow:0 16px 48px rgba(0,0,0,.14),0 4px 12px rgba(22,119,255,.08)}
+    .cr-thumb{
+      height:210px;position:relative;overflow:hidden;flex-shrink:0;
+      display:flex;align-items:center;justify-content:center;
+    }
+    .cr-thumb-mock{width:100%;height:100%;transition:transform .3s ease}
+    .cr-card:hover .cr-thumb-mock{transform:scale(1.03)}
+    .cr-thumb-img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s ease}
+    .cr-card:hover .cr-thumb-img{transform:scale(1.03)}
+    /* gradient fade from thumb into card body */
+    .cr-thumb::after{content:'';position:absolute;bottom:0;left:0;right:0;height:56px;background:linear-gradient(to bottom,transparent,rgba(0,0,0,.18));pointer-events:none}
+    .cr-fmt-ov{
+      position:absolute;top:12px;left:12px;
+      padding:5px 10px;border-radius:6px;
+      font-family:var(--font-m);font-size:10px;font-weight:700;letter-spacing:.07em;
+      background:rgba(0,0,0,.6);color:#fff;backdrop-filter:blur(6px);
+      box-shadow:0 2px 8px rgba(0,0,0,.3);
+    }
+    .cr-dup-ov{
+      position:absolute;top:12px;right:12px;
+      padding:5px 10px;border-radius:6px;font-size:10px;font-weight:700;
+      background:rgba(176,122,0,.92);color:#fff;letter-spacing:.04em;
+      box-shadow:0 2px 8px rgba(0,0,0,.25);
+    }
+    .cr-play{
+      position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+      font-size:44px;color:rgba(255,255,255,.85);text-shadow:0 4px 24px rgba(0,0,0,.6);
+    }
+    .cr-body{padding:16px 18px;flex:1;display:flex;flex-direction:column;gap:11px}
+    .cr-fname{
+      font-size:13.5px;font-weight:600;color:var(--text);
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:-.01em;
+    }
+    .cr-foot{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:auto}
+
     /* ── SCROLLBAR ── */
     ::-webkit-scrollbar{width:6px}
     ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
@@ -295,7 +337,7 @@
       <div class="pg-title">Campaigns</div>
       <div class="pg-sub">Q2 2024 · 10 active campaigns across all platforms</div>
     </div>
-    <button class="btn btn-p" onclick="openModal()">＋ Upload Creative</button>
+    <!-- Upload lives in the campaign page; no action needed from dashboard -->
   </div>
   <div class="chips">
     <div class="chip"><span class="dot dot-blue"></span>10 campaigns</div>
@@ -332,16 +374,7 @@
       <div style="font-size:12px;color:var(--text-2);margin-top:2px">JPG · PNG · WebP · GIF · MP4 · MOV · Max 20MB image / 500MB video</div>
     </div>
   </div>
-  <div class="tbl-wrap">
-    <table>
-      <thead><tr>
-        <th>Creative</th><th>Format</th>
-        <th style="width:240px">AI Score</th>
-        <th>Fatigue Status</th><th></th>
-      </tr></thead>
-      <tbody id="ctbody"></tbody>
-    </table>
-  </div>
+  <div class="cr-grid" id="crcard-grid"></div>
 </div>
 
 <!-- ═══ SCREEN: CREATIVE DETAIL ═══ -->
@@ -525,25 +558,6 @@
   </div>
 </div>
 
-<!-- ═══ MODAL ═══ -->
-<div class="overlay" id="modal">
-  <div class="modal">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
-      <div class="m-title">Upload Creative</div>
-      <button class="btn btn-g btn-sm" onclick="closeModal()" style="font-size:17px;padding:4px 9px;color:var(--text-2)">✕</button>
-    </div>
-    <div class="drop-big">
-      <div class="icon">📤</div>
-      <div style="font-size:15px;font-weight:600;margin-bottom:7px;color:var(--text)">Click or drag creative to upload</div>
-      <div style="font-size:12.5px;color:var(--text-2)">JPG · PNG · WebP · GIF · MP4 · MOV</div>
-      <div style="font-size:12.5px;color:var(--text-2);margin-top:4px">Max 20MB images · 500MB video</div>
-    </div>
-    <div style="margin-top:14px;font-size:12px;color:var(--text-2);text-align:center;line-height:1.6">
-      AI analysis begins automatically · ~15 seconds per image<br>
-      <span style="color:var(--text-3)">Duplicate detection runs on upload · No data leaves Kochava</span>
-    </div>
-  </div>
-</div>
 
 <script>
 const campaigns = [
@@ -583,24 +597,38 @@ function renderCampaigns() {
   `).join('');
 }
 
-function renderTable() {
+const THUMBS = [
+  /* fitness hero  */ `<svg class="cr-thumb-mock" viewBox="0 0 280 210" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="t1a" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#060e1a"/><stop offset="100%" stop-color="#1253cc" stop-opacity=".85"/></linearGradient></defs><rect width="280" height="210" fill="url(#t1a)"/><rect x="0" y="130" width="280" height="80" fill="rgba(0,0,0,.25)"/><text x="20" y="70" font-family="sans-serif" font-weight="900" font-size="26" fill="rgba(255,255,255,.55)" letter-spacing="2">TRACK YOUR</text><text x="20" y="106" font-family="sans-serif" font-weight="900" font-size="34" fill="white">FITNESS</text><text x="20" y="132" font-family="sans-serif" font-weight="900" font-size="34" fill="#4da3ff">GOALS</text><rect x="20" y="158" width="120" height="34" rx="7" fill="#1677FF"/><text x="80" y="180" text-anchor="middle" font-family="sans-serif" font-weight="700" font-size="12" fill="white" letter-spacing=".5">DOWNLOAD NOW</text></svg>`,
+  /* cta variant   */ `<svg class="cr-thumb-mock" viewBox="0 0 280 210" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="t2a" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#12002a"/><stop offset="100%" stop-color="#5b21b6" stop-opacity=".9"/></linearGradient></defs><rect width="280" height="210" fill="url(#t2a)"/><circle cx="220" cy="50" r="80" fill="rgba(124,58,237,.15)"/><text x="20" y="70" font-family="sans-serif" font-weight="900" font-size="22" fill="rgba(255,255,255,.65)" letter-spacing="1">LEVEL UP YOUR</text><text x="20" y="102" font-family="sans-serif" font-weight="900" font-size="32" fill="white">TRAINING</text><text x="20" y="138" font-family="sans-serif" font-size="13" fill="rgba(192,132,252,.8)">Get 30 days free · No credit card</text><rect x="20" y="158" width="144" height="34" rx="7" fill="#7C3AED"/><text x="92" y="180" text-anchor="middle" font-family="sans-serif" font-weight="700" font-size="12" fill="white" letter-spacing=".5">START FREE TRIAL</text></svg>`,
+  /* video 15s     */ `<svg class="cr-thumb-mock" viewBox="0 0 280 210" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="t3a" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#061406"/><stop offset="100%" stop-color="#14532D" stop-opacity=".9"/></linearGradient></defs><rect width="280" height="210" fill="url(#t3a)"/><circle cx="140" cy="100" r="42" fill="rgba(255,255,255,0.10)" stroke="rgba(255,255,255,0.25)" stroke-width="2"/><circle cx="140" cy="100" r="32" fill="rgba(255,255,255,0.08)"/><polygon points="131,84 131,116 163,100" fill="rgba(255,255,255,0.88)"/><rect x="10" y="10" width="44" height="22" rx="4" fill="rgba(0,0,0,.5)"/><text x="32" y="25" text-anchor="middle" font-family="sans-serif" font-weight="700" font-size="10" fill="white">:15s</text><text x="140" y="175" text-anchor="middle" font-family="sans-serif" font-size="11" fill="rgba(255,255,255,0.35)" letter-spacing="1">FitTrack — 15 sec video</text></svg>`,
+  /* banner 728×90 */ `<svg class="cr-thumb-mock" viewBox="0 0 280 210" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="t4a" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#1d3a6b"/><stop offset="100%" stop-color="#2563EB"/></linearGradient></defs><rect width="280" height="210" fill="#EDF1F7"/><text x="140" y="52" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#B0BAC8" letter-spacing="1">728 × 90 LEADERBOARD BANNER</text><rect x="14" y="70" width="252" height="66" rx="6" fill="url(#t4a)"/><text x="26" y="112" font-family="sans-serif" font-weight="700" font-size="15" fill="white">FitTrack — Train Smarter Every Day</text><rect x="192" y="80" width="64" height="28" rx="5" fill="white"/><text x="224" y="98" text-anchor="middle" font-family="sans-serif" font-weight="700" font-size="11" fill="#1d3a6b">Get App</text><text x="140" y="165" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#B0BAC8">Google Display · banner_728x90_v2.jpg</text></svg>`,
+  /* pending       */ `<svg class="cr-thumb-mock" viewBox="0 0 280 210" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg"><rect width="280" height="210" fill="#F0F3F7"/><circle cx="140" cy="96" r="24" fill="none" stroke="#DDE2EA" stroke-width="3"/><path d="M 140 72 A 24 24 0 0 1 164 96" stroke="#1677FF" stroke-width="3" fill="none" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 140 96" to="360 140 96" dur="1.2s" repeatCount="indefinite"/></path><text x="140" y="148" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#A0ABBA">Analysing creative…</text></svg>`,
+];
+
+function renderCreativeCards() {
   const BADGE={
     healthy:`<span class="badge badge-h">● Healthy</span>`,
     fatiguing:`<span class="badge badge-f">● Fatiguing</span>`,
     insufficient_data:`<span class="badge badge-i">— Analysing</span>`
   };
-  document.getElementById('ctbody').innerHTML = creatives.map(c=>{
+  document.getElementById('crcard-grid').innerHTML = creatives.map((c,i)=>{
     const cls=c.score===null?'':c.score>=8?'hi':c.score<6?'lo':'md';
     const scoreHtml=c.score!==null
       ?`<div class="sbar"><div class="sbar-t"><div class="sbar-f ${cls}" style="width:${c.score*10}%"></div></div><span class="sn">${c.score}/10</span></div>`
-      :`<span style="color:var(--text-2);font-size:12px">Analysing…</span>`;
-    return `<tr onclick="openCreative(${c.id},${c.dup})">
-      <td style="font-weight:500">${c.name}${c.dup?` <span style="background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border);border-radius:4px;font-size:10px;padding:1px 6px;font-weight:600;margin-left:6px">DUPLICATE</span>`:''}</td>
-      <td><span class="ftag">${c.fmt}</span></td>
-      <td>${scoreHtml}</td>
-      <td>${BADGE[c.status]}</td>
-      <td><button class="btn btn-s btn-sm">View →</button></td>
-    </tr>`;
+      :`<span style="color:var(--text-3);font-size:12px">Analysing…</span>`;
+    return `<div class="cr-card" onclick="openCreative(${c.id},${c.dup})">
+      <div class="cr-thumb">
+        ${THUMBS[i] || THUMBS[0]}
+        <span class="cr-fmt-ov">${c.fmt}</span>
+        ${c.dup?`<span class="cr-dup-ov">DUPE</span>`:''}
+        ${c.fmt==='MP4'?`<div class="cr-play">▶</div>`:''}
+      </div>
+      <div class="cr-body">
+        <div class="cr-fname">${c.name}</div>
+        ${scoreHtml}
+        <div class="cr-foot">${BADGE[c.status]}</div>
+      </div>
+    </div>`;
   }).join('');
 }
 
@@ -648,7 +676,7 @@ function openCampaign(id){
   const c=campaigns.find(x=>x.id===id);
   document.getElementById('c-name-bc').textContent=c.name;
   document.getElementById('c-name-title').textContent=c.name;
-  renderTable();show('camp');
+  renderCreativeCards();show('camp');
 }
 
 function openCreative(id,hasDup){
@@ -664,9 +692,6 @@ function openCreative(id,hasDup){
   show('creat');
 }
 
-function openModal(){document.getElementById('modal').classList.add('on')}
-function closeModal(){document.getElementById('modal').classList.remove('on')}
-document.getElementById('modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal()});
 
 renderCampaigns();
 drawRadar();

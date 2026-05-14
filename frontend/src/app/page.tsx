@@ -1,17 +1,12 @@
 'use client';
-import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { api } from '@/lib/api';
 import { CampaignCard } from '@/components/CampaignCard';
-import { CreativeUpload } from '@/components/CreativeUpload';
 
 export default function DashboardPage() {
-  const { data: campaigns, isLoading, mutate } = useSWR('campaigns', api.getCampaigns);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [uploadCampaignId, setUploadCampaignId] = useState<number | null>(null);
-
-  const openUpload = (id: number) => { setUploadCampaignId(id); setModalOpen(true); };
-  const closeUpload = () => setModalOpen(false);
+  const router = useRouter();
+  const { data: campaigns, isLoading } = useSWR('campaigns', api.getCampaigns);
 
   const fatiguing = campaigns?.filter(c => (c as any).fatiguing_count > 0).length ?? 0;
 
@@ -22,19 +17,15 @@ export default function DashboardPage() {
           <div className="pg-title">Campaigns</div>
           <div className="pg-sub">{campaigns?.length ?? 0} active campaigns across all platforms</div>
         </div>
-        <button
-          className="btn btn-p"
-          onClick={() => campaigns?.[0] && openUpload(campaigns[0].id)}
-          disabled={!campaigns?.length}
-        >
-          ＋ Upload Creative
-        </button>
       </div>
 
       {campaigns && (
         <div className="chips">
           <div className="chip"><span className="dot dot-blue" />{campaigns.length} campaigns</div>
           <div className="chip"><span className="dot dot-blue" />{campaigns.reduce((s, c) => s + c.creative_count, 0)} creatives</div>
+          {fatiguing > 0 && (
+            <div className="chip"><span className="dot dot-red" />{fatiguing} fatiguing</div>
+          )}
         </div>
       )}
 
@@ -49,25 +40,6 @@ export default function DashboardPage() {
           {campaigns.map(c => <CampaignCard key={c.id} campaign={c} />)}
         </div>
       )}
-
-      {/* Upload modal */}
-      <div className={`overlay${modalOpen ? ' on' : ''}`} onClick={closeUpload}>
-        <div className="modal" onClick={e => e.stopPropagation()}>
-          <div className="m-title">
-            Upload Creative
-            <button className="modal-close" onClick={closeUpload}>✕</button>
-          </div>
-          <div className="m-sub">
-            {campaigns?.find(c => c.id === uploadCampaignId)?.name}
-          </div>
-          {uploadCampaignId && (
-            <CreativeUpload
-              campaignId={uploadCampaignId}
-              onSuccess={() => { mutate(); closeUpload(); }}
-            />
-          )}
-        </div>
-      </div>
     </div>
   );
 }
