@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Literal, Optional
 
-from pydantic import BaseModel, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class AnalysisScores(BaseModel):
@@ -45,19 +45,31 @@ class OllamaAnalysisResponse(BaseModel):
         return self
 
 
+def _zero_analysis_scores() -> AnalysisScores:
+    return AnalysisScores(
+        hook_strength=0, cta_clarity=0, visual_quality=0,
+        message_clarity=0, emotional_resonance=0, social_proof=0,
+        brand_consistency=0,
+    )
+
+
 class DegradedAnalysisResponse(OllamaAnalysisResponse):
+    scores: AnalysisScores = Field(default_factory=_zero_analysis_scores)
     persuasion_strategy: str = "unknown"
     dominant_emotion: str = "unknown"
+    recommendations: list[str] = Field(
+        default_factory=lambda: [
+            "Retry analysis with a clearer image",
+            "Ensure Ollama is running and the model is loaded",
+            "Check image format and file integrity",
+        ]
+    )
     explanation: str = "Analysis unavailable — Ollama did not return valid JSON."
     status: Literal["complete", "degraded"] = "degraded"
 
     @model_validator(mode="after")
     def zero_scores(self) -> DegradedAnalysisResponse:
-        self.scores = AnalysisScores(
-            hook_strength=0, cta_clarity=0, visual_quality=0,
-            message_clarity=0, emotional_resonance=0, social_proof=0,
-            brand_consistency=0,
-        )
+        self.scores = _zero_analysis_scores()
         self.overall_score = 0.0
         return self
 
