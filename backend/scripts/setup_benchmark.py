@@ -53,7 +53,8 @@ def compute_phashes_for_dir(directory: Path, max_images: int) -> list[int]:
         try:
             h = imagehash.phash(Image.open(path).convert("RGB"), hash_size=8)
             hashes.append(int(str(h), 16))
-        except Exception:
+        except Exception as e:
+            print(f"  Warning: failed to hash {path}: {e}")
             continue
     print(f"Computed {len(hashes)} pHashes from real images")
     return hashes
@@ -84,7 +85,7 @@ def generate_synthetic_corpus(count: int) -> list[int]:
 async def main(max_images: int):
     if CORPUS_FILE.exists():
         existing = json.loads(CORPUS_FILE.read_text())
-        if len(existing) >= max_images:
+        if len(existing) >= max_images and len(existing) > 0:
             print(f"Corpus already exists with {len(existing)} hashes. Skipping.")
             return
     hashes = []
