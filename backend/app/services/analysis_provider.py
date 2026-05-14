@@ -29,7 +29,10 @@ class OllamaProvider:
 
     async def analyse_image(self, path: Path) -> OllamaAnalysisResponse | DegradedAnalysisResponse:
         """Analyse an image creative. Returns validated result or DegradedAnalysisResponse after 3 retries."""
-        b64 = base64.b64encode(path.read_bytes()).decode()
+        try:
+            b64 = base64.b64encode(path.read_bytes()).decode()
+        except (FileNotFoundError, PermissionError, OSError):
+            return DegradedAnalysisResponse()
         return await self._call_with_retry(IMAGE_ANALYSIS_PROMPT, b64)
 
     async def analyse_video_keyframes(self, paths: list[Path]) -> OllamaAnalysisResponse | DegradedAnalysisResponse:
@@ -39,7 +42,10 @@ class OllamaProvider:
 
         results = []
         for path in paths:
-            b64 = base64.b64encode(path.read_bytes()).decode()
+            try:
+                b64 = base64.b64encode(path.read_bytes()).decode()
+            except (FileNotFoundError, PermissionError, OSError):
+                continue
             result = await self._call_with_retry(VIDEO_ANALYSIS_PROMPT, b64)
             if result.status == "complete":
                 results.append(result)
@@ -54,9 +60,12 @@ class OllamaProvider:
         ]
         averaged_scores = {}
         for field in score_fields:
-            averaged_scores[field] = round(
-                sum(getattr(r.scores, field) for r in results) / len(results)
-            )
+            try:
+                averaged_scores[field] = round(
+                    sum(getattr(r.scores, field) for r in results) / len(results)
+                )
+            except (AttributeError, ZeroDivisionError):
+                averaged_scores[field] = 0
 
         # Use best-scoring frame for text fields
         best = max(results, key=lambda r: r.overall_score)
@@ -92,7 +101,10 @@ class OllamaProvider:
                         timeout=60,
                     )
                 resp.raise_for_status()
-                raw = resp.json()["response"]
+                resp_data = resp.json()
+                raw = resp_data.get("response", "")
+                if not raw:
+                    raise ValueError("Empty response from Ollama")
                 data = json.loads(raw)
                 return OllamaAnalysisResponse(**data)
             except (json.JSONDecodeError, ValidationError, KeyError) as e:
