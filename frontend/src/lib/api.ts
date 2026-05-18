@@ -102,9 +102,7 @@ export interface FatigueResponse {
 }
 
 export interface DuplicatePair {
-  id: number;
-  creative_id_a: number;
-  creative_id_b: number;
+  duplicate_id: number;
   hamming_distance: number;
   duplicate_type: string;
   detected_at: string;

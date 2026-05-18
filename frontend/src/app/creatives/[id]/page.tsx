@@ -1,4 +1,5 @@
 'use client';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { api } from '@/lib/api';
@@ -6,7 +7,11 @@ import { AnnotatedImage } from '@/components/AnnotatedImage';
 import { DuplicateAlert } from '@/components/DuplicateAlert';
 import { FatigueBadge } from '@/components/FatigueBadge';
 import { KPITable } from '@/components/KPITable';
-import { ScoreRadar } from '@/components/ScoreRadar';
+
+const ScoreRadar = dynamic(
+  () => import('@/components/ScoreRadar').then(m => m.ScoreRadar),
+  { ssr: false, loading: () => <div style={{ height: 240 }} /> }
+);
 
 interface Props { params: { id: string } }
 
