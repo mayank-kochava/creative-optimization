@@ -2,12 +2,20 @@ import asyncio
 import base64
 import json
 from pathlib import Path
+from typing import Protocol, runtime_checkable
 
 import httpx
 from pydantic import ValidationError
 
 from app.schemas.analysis import DegradedAnalysisResponse, OllamaAnalysisResponse
 from app.services.prompts import IMAGE_ANALYSIS_PROMPT, VIDEO_ANALYSIS_PROMPT
+
+
+@runtime_checkable
+class AnalysisProvider(Protocol):
+    async def analyse_image(self, path: Path) -> "OllamaAnalysisResponse | DegradedAnalysisResponse": ...
+    async def analyse_video_keyframes(self, paths: "list[Path]") -> "OllamaAnalysisResponse | DegradedAnalysisResponse": ...
+    async def prewarm(self) -> None: ...
 
 
 class OllamaProvider:
