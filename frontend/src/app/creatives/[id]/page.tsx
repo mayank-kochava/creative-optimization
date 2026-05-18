@@ -27,7 +27,7 @@ export default function CreativeDetailPage({ params }: Props) {
   const { data: creative, isLoading } = useSWR(
     `creative-${creativeId}`,
     () => api.getCreative(creativeId),
-    { refreshInterval: (data) => (data?.analysis ? 0 : 3000) }
+    { refreshInterval: (data) => (!data?.analysis || data.analysis.status === 'degraded' ? 5000 : 0) }
   );
   const { data: duplicates = [] } = useSWR(
     `creative-${creativeId}-duplicates`,
@@ -97,11 +97,24 @@ export default function CreativeDetailPage({ params }: Props) {
 
         {/* Right: score + analysis */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {!creative.analysis ? (
+          {!creative.analysis || creative.analysis.status === 'degraded' ? (
             <div className="panel">
               <div className="pb" style={{ textAlign: 'center', padding: 40 }}>
                 <div className="spin" style={{ margin: '0 auto 12px' }} />
-                <div style={{ color: 'var(--text-2)', fontSize: 13 }}>Analysing creative…</div>
+                <div style={{ color: 'var(--text-2)', fontSize: 13 }}>
+                  {creative.analysis?.status === 'degraded'
+                    ? 'Analysis model loading… retrying automatically'
+                    : 'Analysing creative…'}
+                </div>
+                {creative.analysis?.status === 'degraded' && (
+                  <button
+                    className="btn-sm"
+                    style={{ marginTop: 12 }}
+                    onClick={() => api.reanalyse(creativeId)}
+                  >
+                    Retry now
+                  </button>
+                )}
               </div>
             </div>
           ) : (

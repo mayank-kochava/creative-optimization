@@ -139,4 +139,7 @@ export const api = {
 
   getDuplicates: (id: number): Promise<DuplicatePair[]> =>
     client.get(`/creatives/${id}/duplicates`).then(r => r.data),
+
+  reanalyse: (id: number): Promise<{ status: string }> =>
+    client.post(`/creatives/${id}/reanalyse`).then(r => r.data),
 };

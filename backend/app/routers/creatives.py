@@ -9,6 +9,7 @@ from sqlalchemy.orm import selectinload
 from app.config import settings
 from app.database import get_db
 from app.ingestion.orchestrator import CreativeIngestionOrchestrator, IngestionResult
+from app.models.analysis import CreativeAnalysis
 from app.models.annotation import CreativeAnnotation
 from app.models.creative import Creative
 from app.models.duplicate import DuplicatePair
@@ -243,6 +244,32 @@ async def get_creative_duplicates(
 # ---------------------------------------------------------------------------
 # GET /creatives/{creative_id}/image  (kept from original stub)
 # ---------------------------------------------------------------------------
+
+@router.post("/creatives/{creative_id}/reanalyse", status_code=202)
+async def reanalyse_creative(creative_id: int, db: AsyncSession = Depends(get_db)):
+    """Delete degraded analysis and re-queue background analysis."""
+    result = await db.execute(select(Creative).where(Creative.id == creative_id))
+    creative = result.scalar_one_or_none()
+    if not creative:
+        raise HTTPException(status_code=404, detail="Creative not found")
+
+    # Only allow re-analysis when current analysis is degraded (or missing)
+    existing = await db.execute(
+        select(CreativeAnalysis).where(CreativeAnalysis.creative_id == creative_id)
+    )
+    analysis_row = existing.scalar_one_or_none()
+    if analysis_row and analysis_row.status != "degraded":
+        raise HTTPException(status_code=409, detail="Analysis already complete")
+
+    if analysis_row:
+        await db.delete(analysis_row)
+        await db.commit()
+
+    import asyncio
+    orchestrator = CreativeIngestionOrchestrator()
+    asyncio.create_task(orchestrator._run_analysis(creative_id, creative.storage_path))
+    return {"status": "queued", "creative_id": creative_id}
+
 
 @router.get("/creatives/{creative_id}/image")
 async def get_creative_image(creative_id: int, db: AsyncSession = Depends(get_db)):
