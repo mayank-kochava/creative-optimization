@@ -18,32 +18,30 @@ from app.schemas.analysis import AnnotationResponse, BBoxResponse
 from app.schemas.analysis import KPISummary as KPISummarySchema
 from app.schemas.analysis import OllamaAnalysisResponse
 from app.schemas.creative import CreativeDetail, UploadResponse
-from app.services.analysis_provider import OllamaProvider
 from app.services.annotation_pipeline import AnnotationPipeline
 from app.services.content_classifier import ContentClassifier
 from app.services.deduplication import DeduplicationService
 from app.services.fatigue_detector import FatigueDetector
 from app.services.kpi_aggregator import KPIAggregator
+from app.services.provider_state import get_active_provider
 from app.services.video_ingestion import VideoIngestionService
 
 router = APIRouter()
 
-# Module-level singletons — created once at import, not per-request
-_provider = OllamaProvider(base_url=settings.ollama_base_url)
 _annotation_pipeline = AnnotationPipeline()
 _video_service = VideoIngestionService()
-_content_classifier = ContentClassifier(_provider)
 
 
 def get_orchestrator(db: AsyncSession) -> CreativeIngestionOrchestrator:
-    """Return a new orchestrator bound to the given db session."""
+    """Return a new orchestrator bound to the given db session, using the active provider."""
+    provider = get_active_provider()
     return CreativeIngestionOrchestrator(
         db=db,
-        analysis_provider=_provider,
+        analysis_provider=provider,
         dedup_service=DeduplicationService(db),
         annotation_pipeline=_annotation_pipeline,
         video_service=_video_service,
-        content_classifier=_content_classifier,
+        content_classifier=ContentClassifier(provider),
         fatigue_detector=FatigueDetector(db),
     )
 
