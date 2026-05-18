@@ -17,24 +17,38 @@ def event_loop():
     loop.close()
 
 
-@pytest_asyncio.fixture(scope="session")
-async def test_engine():
-    engine = create_async_engine(TEST_DATABASE_URL, echo=False)
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    yield engine
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-    await engine.dispose()
+@pytest.fixture(scope="session", autouse=True)
+def _setup_db():
+    """Create tables once before all tests, drop after, using a dedicated event loop."""
+    async def _create():
+        engine = create_async_engine(TEST_DATABASE_URL, echo=False)
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        await engine.dispose()
+
+    async def _drop():
+        engine = create_async_engine(TEST_DATABASE_URL, echo=False)
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.drop_all)
+        await engine.dispose()
+
+    setup_loop = asyncio.new_event_loop()
+    setup_loop.run_until_complete(_create())
+    setup_loop.close()
+    yield
+    teardown_loop = asyncio.new_event_loop()
+    teardown_loop.run_until_complete(_drop())
+    teardown_loop.close()
 
 
 @pytest_asyncio.fixture
-async def db_session(test_engine) -> AsyncSession:
-    async_session = async_sessionmaker(test_engine, expire_on_commit=False)
+async def db_session() -> AsyncSession:
+    engine = create_async_engine(TEST_DATABASE_URL, echo=False)
+    async_session = async_sessionmaker(engine, expire_on_commit=False)
     async with async_session() as session:
-        async with session.begin():
-            yield session
-            await session.rollback()
+        yield session
+        await session.rollback()
+    await engine.dispose()
 
 
 @pytest.fixture(scope="session")
