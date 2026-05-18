@@ -1,6 +1,7 @@
 """Seed demo data: 10 campaigns, 50 creatives, 30-day KPIs, fatigue examples, duplicates."""
 import asyncio
 import ctypes
+import json
 import os
 import random
 import shutil
@@ -167,6 +168,51 @@ async def main():
             creative_ids[4], creative_ids[5]
         )
     print("Created duplicate pairs")
+
+    # Annotations: face/text/CTA bounding boxes in pixel space
+    CTA_LABELS = ["DOWNLOAD NOW", "GET STARTED", "LEARN MORE", "TRY FREE", "SHOP NOW", "INSTALL FREE"]
+    TEXT_LABELS = ["Download Now", "Get Started Free", "Limited Time Offer", "Try for Free",
+                   "50% OFF Today", "Join 1M+ Users", "See How It Works"]
+    ann_rows = []
+    random.seed(7)
+    for cid, phash, camp_id, trend in creative_phashes:
+        row = await conn.fetchrow("SELECT width, height FROM creatives WHERE id = $1", cid)
+        W, H = float(row["width"] or 400), float(row["height"] or 300)
+
+        n_faces = random.randint(0, 2)
+        for _ in range(n_faces):
+            fw = random.uniform(0.12, 0.22) * W
+            fh = fw * random.uniform(1.1, 1.4)
+            fx = random.uniform(0.1, 0.75) * W
+            fy = random.uniform(0.05, 0.35) * H
+            ann_rows.append((cid, "face",
+                json.dumps({"x": round(fx, 1), "y": round(fy, 1), "w": round(fw, 1), "h": round(fh, 1)}),
+                None, round(random.uniform(0.72, 0.97), 2)))
+
+        n_text = random.randint(1, 3)
+        for t in range(n_text):
+            tw = random.uniform(0.35, 0.7) * W
+            th = random.uniform(0.04, 0.09) * H
+            tx = random.uniform(0.05, 0.2) * W
+            ty = (0.35 + t * 0.12 + random.uniform(0, 0.05)) * H
+            ann_rows.append((cid, "text",
+                json.dumps({"x": round(tx, 1), "y": round(ty, 1), "w": round(tw, 1), "h": round(th, 1)}),
+                random.choice(TEXT_LABELS), round(random.uniform(0.80, 0.99), 2)))
+
+        cw = random.uniform(0.22, 0.42) * W
+        ch = random.uniform(0.06, 0.10) * H
+        cx = (W - cw) / 2 + random.uniform(-0.05, 0.05) * W
+        cy = random.uniform(0.72, 0.86) * H
+        ann_rows.append((cid, "cta",
+            json.dumps({"x": round(cx, 1), "y": round(cy, 1), "w": round(cw, 1), "h": round(ch, 1)}),
+            random.choice(CTA_LABELS), round(random.uniform(0.85, 0.99), 2)))
+
+    await conn.executemany(
+        "INSERT INTO creative_annotations (creative_id, annotation_type, bbox, label, confidence) "
+        "VALUES ($1, $2, $3, $4, $5)",
+        ann_rows
+    )
+    print(f"Seeded {len(ann_rows)} annotations")
 
     await conn.close()
     print("Seed complete!")
