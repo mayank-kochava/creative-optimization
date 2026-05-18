@@ -59,6 +59,8 @@ For video, additionally consider:
 
 Return ONLY the JSON object. No explanation outside the JSON."""
 
-CONTENT_CLASSIFIER_PROMPT = """Does this image contain adult, violent, or otherwise inappropriate content that should not be processed?
-
-Answer with exactly one word: YES or NO"""
+CONTENT_CLASSIFIER_PROMPT = (
+    "Is this image an advertisement creative (banner ad, social media ad, "
+    "display ad, video ad thumbnail, or promotional creative)? "
+    "Answer with a single word: YES or NO."
+)

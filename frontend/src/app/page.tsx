@@ -8,7 +8,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const { data: campaigns, isLoading } = useSWR('campaigns', api.getCampaigns);
 
-  const fatiguing = campaigns?.filter(c => (c as any).fatiguing_count > 0).length ?? 0;
+  const fatiguing = campaigns?.filter(c => c.fatiguing_count > 0).length ?? 0;
 
   return (
     <div className="page">

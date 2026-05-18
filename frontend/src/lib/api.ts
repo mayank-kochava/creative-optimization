@@ -9,6 +9,7 @@ export interface Campaign {
   name: string;
   platform_tags: string[];
   creative_count: number;
+  fatiguing_count: number;
   created_at: string;
   updated_at: string;
 }
