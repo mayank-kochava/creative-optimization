@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic_settings import BaseSettings
 
 
@@ -10,7 +12,7 @@ class Settings(BaseSettings):
     phash_duplicate_threshold: int = 10
     benchmark_corpus_path: str = "data/benchmark/corpus.json"
     anthropic_api_key: str = ""
-    analysis_provider: str = "claude"  # "claude" | "ollama"
+    analysis_provider: Literal["claude", "ollama"] = "claude"
 
     class Config:
         env_file = ".env"
