@@ -1,10 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.database import get_db
 from app.models.campaign import Campaign
 from app.models.creative import Creative
+from app.models.duplicate import DuplicatePair
 from app.schemas.campaign import CampaignCreate, CampaignResponse
 from app.schemas.creative import CreativeSummary
 
@@ -64,11 +66,27 @@ async def list_campaign_creatives(
     result = await db.execute(
         select(Creative)
         .where(Creative.campaign_id == campaign_id)
+        .options(selectinload(Creative.analysis))
         .offset(skip)
         .limit(limit)
         .order_by(Creative.created_at.desc())
     )
     creatives = result.scalars().all()
+
+    creative_ids = [c.id for c in creatives]
+    dup_result = await db.execute(
+        select(DuplicatePair.creative_id_a, DuplicatePair.creative_id_b).where(
+            or_(
+                DuplicatePair.creative_id_a.in_(creative_ids),
+                DuplicatePair.creative_id_b.in_(creative_ids),
+            )
+        )
+    )
+    dup_ids: set[int] = set()
+    for row in dup_result.all():
+        dup_ids.add(row.creative_id_a)
+        dup_ids.add(row.creative_id_b)
+
     return [
         CreativeSummary(
             id=c.id,
@@ -77,6 +95,8 @@ async def list_campaign_creatives(
             width=c.width,
             height=c.height,
             fatigue_status=c.fatigue_status,
+            overall_score=c.analysis.overall_score if c.analysis else None,
+            has_duplicate=c.id in dup_ids,
             created_at=c.created_at,
         )
         for c in creatives
