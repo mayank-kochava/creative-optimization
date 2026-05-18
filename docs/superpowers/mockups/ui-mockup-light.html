@@ -5,38 +5,39 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Creative Intelligence Platform</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     :root{
-      --bg:#F5F7FA;
+      --bg:#EDF1F7;
       --surface:#FFFFFF;
-      --surface-2:#F0F3F7;
-      --surface-3:#E8EDF3;
-      --border:#DDE2EA;
-      --border-h:#B8C0CC;
-      --text:#1A2030;
-      --text-2:#5B6478;
-      --text-3:#A0ABBA;
-      --blue:#1677FF;
-      --blue-10:rgba(22,119,255,.08);
-      --blue-20:rgba(22,119,255,.18);
-      --blue-50:rgba(22,119,255,.5);
+      --surface-2:#F4F6FA;
+      --surface-3:#E8ECF3;
+      --border:#E1E1E1;
+      --border-h:#C4C9D4;
+      --text:#1A1B1C;
+      --text-2:#575B5E;
+      --text-3:#9DA3AE;
+      --blue:#0C72EE;
+      --blue-10:rgba(12,114,238,.08);
+      --blue-20:rgba(12,114,238,.18);
+      --blue-50:rgba(12,114,238,.5);
+      --navy:#1E4B97;
       --amber:#B07A00;
       --amber-bg:#FFF8E7;
       --amber-border:#F0C040;
-      --green:#1A7F3C;
-      --green-bg:#F0FBF4;
-      --green-border:#4CAF73;
-      --red:#C0392B;
+      --green:#427900;
+      --green-bg:#F3FAE8;
+      --green-border:#4D840B;
+      --red:#BE202E;
       --red-bg:#FFF3F2;
       --red-border:#E57373;
       --r:8px;--r-lg:12px;--r-xl:16px;
       --shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);
       --shadow-md:0 4px 12px rgba(0,0,0,.10),0 2px 4px rgba(0,0,0,.06);
       --shadow-lg:0 8px 30px rgba(0,0,0,.12);
-      --font:'DM Sans',sans-serif;
-      --font-h:'Syne',sans-serif;
+      --font:'Inter',sans-serif;
+      --font-h:'Inter',sans-serif;
       --font-m:'JetBrains Mono',monospace;
     }
     html{font-size:14px}
@@ -44,7 +45,7 @@
 
     /* ── HEADER ── */
     .hdr{
-      background:#001529;
+      background:#0F1E34;
       height:56px;padding:0 28px;display:flex;align-items:center;gap:16px;
       position:sticky;top:0;z-index:100;
       box-shadow:0 2px 8px rgba(0,0,0,.25);
@@ -53,7 +54,7 @@
       display:flex;align-items:center;gap:9px;color:#fff;cursor:pointer;user-select:none}
     .logo-orb{
       width:26px;height:26px;border-radius:6px;
-      background:linear-gradient(135deg,#1677FF,#0d52d0);
+      background:linear-gradient(135deg,#1E4B97,#0C72EE);
       display:flex;align-items:center;justify-content:center;
       box-shadow:0 0 12px rgba(22,119,255,.5);
       font-size:13px;
@@ -95,8 +96,8 @@
       cursor:pointer;border:none;transition:all .15s;
       display:inline-flex;align-items:center;gap:7px;font-family:var(--font);letter-spacing:.01em;
     }
-    .btn-p{background:var(--blue);color:#fff;box-shadow:0 2px 8px rgba(22,119,255,.35)}
-    .btn-p:hover{background:#1566e0;transform:translateY(-1px);box-shadow:0 4px 14px rgba(22,119,255,.4)}
+    .btn-p{background:var(--blue);color:#fff;box-shadow:0 2px 8px rgba(12,114,238,.35)}
+    .btn-p:hover{background:#0a60d0;transform:translateY(-1px);box-shadow:0 4px 14px rgba(12,114,238,.4)}
     .btn-s{background:var(--surface);color:var(--text);border:1px solid var(--border);box-shadow:var(--shadow)}
     .btn-s:hover{border-color:var(--border-h);box-shadow:var(--shadow-md)}
     .btn-g{background:transparent;color:var(--text-2)}.btn-g:hover{color:var(--text);background:var(--surface-2)}
@@ -310,6 +311,19 @@
     }
     .cr-foot{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:auto}
 
+    /* ── DURATION TOGGLE ── */
+    .dur-btn {
+      padding: 5px 14px; border-radius: 6px; font-size: 12px; font-weight: 500;
+      cursor: pointer; border: none; background: transparent; color: var(--text-2);
+      font-family: var(--font); transition: all .15s;
+    }
+    .dur-btn:hover { color: var(--text); background: var(--surface-2); }
+    .dur-btn.on { background: var(--blue); color: #fff; font-weight: 600; }
+
+    /* ── PERFORMANCE CARD ACCENT ── */
+    .cr-card.top-card { border-left: 3px solid var(--green-border); }
+    .cr-card.bot-card { border-left: 3px solid var(--red-border); }
+
     /* ── SCROLLBAR ── */
     ::-webkit-scrollbar{width:6px}
     ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
@@ -327,6 +341,7 @@
   <nav class="hdr-nav">
     <button class="nav-btn on" id="nav-dash" onclick="show('dash')">Dashboard</button>
     <button class="nav-btn" id="nav-camp" onclick="show('camp')">Campaigns</button>
+    <button class="nav-btn" id="nav-perf" onclick="show('perf')">Performance</button>
   </nav>
 </header>
 
@@ -374,6 +389,53 @@
     </div>
   </div>
   <div class="cr-grid" id="crcard-grid"></div>
+</div>
+
+<!-- ═══ SCREEN: PERFORMANCE ═══ -->
+<div class="screen" id="s-perf">
+  <div class="pg-hdr">
+    <div>
+      <div class="pg-title">Performance</div>
+      <div class="pg-sub">Compare top and bottom performing creatives across your portfolio</div>
+    </div>
+  </div>
+
+  <!-- Controls row -->
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;flex-wrap:wrap">
+    <div style="display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:3px;box-shadow:var(--shadow)">
+      <button class="dur-btn on" onclick="setDur(this,'3mo')">3 months</button>
+      <button class="dur-btn" onclick="setDur(this,'6mo')">6 months</button>
+      <button class="dur-btn" onclick="setDur(this,'1yr')">1 year</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-2)">
+      Show top/bottom
+      <select id="topN-select" onchange="renderPerf()" style="border:1px solid var(--border);border-radius:var(--r);padding:5px 10px;font-size:13px;background:var(--surface);color:var(--text);cursor:pointer">
+        <option value="4">4</option>
+        <option value="6" selected>6</option>
+        <option value="8">8</option>
+        <option value="10">10</option>
+      </select>
+      creatives
+    </div>
+  </div>
+
+  <!-- Top performers -->
+  <div style="margin-bottom:32px">
+    <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:8px">
+      <span style="width:4px;height:20px;background:var(--green-border);border-radius:2px;display:inline-block"></span>
+      Top Performers
+    </div>
+    <div class="cr-grid" id="top-grid"></div>
+  </div>
+
+  <!-- Needs attention -->
+  <div>
+    <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:8px">
+      <span style="width:4px;height:20px;background:var(--red-border);border-radius:2px;display:inline-block"></span>
+      Needs Attention
+    </div>
+    <div class="cr-grid" id="bot-grid"></div>
+  </div>
 </div>
 
 <!-- ═══ SCREEN: CREATIVE DETAIL ═══ -->
@@ -666,6 +728,7 @@ function show(name){
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('on'));
   const nb=document.getElementById('nav-'+name);
   if(nb)nb.classList.add('on');
+  if(name==='perf')renderPerf();
   window.scrollTo(0,0);
 }
 
@@ -690,8 +753,87 @@ function openCreative(id,hasDup){
 }
 
 
+const perfCreatives = [
+  {id:1, name:'fitness_hero_01.jpg',      fmt:'JPG',  ctr:3.82, score:8, status:'healthy', dup:false, campaign:'Summer Fitness App'},
+  {id:2, name:'gaming_install_v3.png',    fmt:'PNG',  ctr:3.61, score:9, status:'healthy', dup:false, campaign:'Gaming App Install Push'},
+  {id:3, name:'b2b_linkedin_q3.jpg',      fmt:'JPG',  ctr:3.44, score:8, status:'healthy', dup:false, campaign:'B2B SaaS Q3 Pipeline'},
+  {id:4, name:'mobile_game_pass.webp',    fmt:'WEBP', ctr:3.21, score:8, status:'healthy', dup:false, campaign:'Mobile Game Season Pass'},
+  {id:5, name:'fintech_hero_v2.jpg',      fmt:'JPG',  ctr:3.10, score:7, status:'healthy', dup:false, campaign:'Fintech Onboarding Flow'},
+  {id:6, name:'food_promo_square.jpg',    fmt:'JPG',  ctr:2.95, score:7, status:'healthy', dup:false, campaign:'Food Delivery App Launch'},
+  {id:7, name:'travel_banner_v1.jpg',     fmt:'JPG',  ctr:2.84, score:6, status:'healthy', dup:false, campaign:'Travel Rewards Card'},
+  {id:8, name:'fitness_square_v2.webp',   fmt:'WEBP', ctr:2.71, score:5, status:'healthy', dup:false, campaign:'Summer Fitness App'},
+  {id:9, name:'ride_recruit_v2.png',      fmt:'PNG',  ctr:2.60, score:6, status:'healthy', dup:false, campaign:'Ride-Share Driver Recruit'},
+  {id:10,name:'stream_retarget.jpg',      fmt:'JPG',  ctr:2.48, score:5, status:'healthy', dup:false, campaign:'Streaming Service Retarget'},
+  {id:11,name:'ecom_flash_banner.jpg',    fmt:'JPG',  ctr:1.92, score:5, status:'healthy', dup:false, campaign:'E-commerce Holiday Flash'},
+  {id:12,name:'fitness_cta_variant_a.jpg',fmt:'JPG',  ctr:1.74, score:4, status:'healthy', dup:true,  campaign:'Summer Fitness App'},
+  {id:13,name:'gaming_15s_reel.mp4',      fmt:'MP4',  ctr:1.61, score:4, status:'fatiguing',dup:false, campaign:'Gaming App Install Push'},
+  {id:14,name:'food_15s_promo.mp4',       fmt:'MP4',  ctr:1.44, score:4, status:'fatiguing',dup:false, campaign:'Food Delivery App Launch'},
+  {id:15,name:'travel_social_v3.jpg',     fmt:'JPG',  ctr:1.30, score:3, status:'fatiguing',dup:false, campaign:'Travel Rewards Card'},
+  {id:16,name:'ecom_carousel_a.jpg',      fmt:'JPG',  ctr:1.18, score:3, status:'fatiguing',dup:false, campaign:'E-commerce Holiday Flash'},
+  {id:17,name:'stream_promo_v2.webp',     fmt:'WEBP', ctr:1.05, score:3, status:'fatiguing',dup:false, campaign:'Streaming Service Retarget'},
+  {id:18,name:'fintech_banner_old.jpg',   fmt:'JPG',  ctr:0.92, score:2, status:'fatiguing',dup:false, campaign:'Fintech Onboarding Flow'},
+  {id:19,name:'b2b_generic_v1.png',       fmt:'PNG',  ctr:0.81, score:2, status:'fatiguing',dup:true,  campaign:'B2B SaaS Q3 Pipeline'},
+  {id:20,name:'fitness_video_15s.mp4',    fmt:'MP4',  ctr:0.68, score:2, status:'fatiguing',dup:false, campaign:'Summer Fitness App'},
+];
+
+const PERF_GRADS = [
+  'linear-gradient(135deg,#060e1a,#1253cc)',
+  'linear-gradient(135deg,#1B0033,#4c1d95)',
+  'linear-gradient(135deg,#071121,#1e3a5f)',
+  'linear-gradient(135deg,#1a1a2e,#6B21A8)',
+  'linear-gradient(135deg,#071121,#0d52d0)',
+  'linear-gradient(135deg,#0B1C0B,#14532D)',
+  'linear-gradient(135deg,#1a0a0a,#7f1d1d)',
+  'linear-gradient(135deg,#071121,#1e3a5f)',
+  'linear-gradient(135deg,#1a1a2e,#1e3a5f)',
+  'linear-gradient(135deg,#060e1a,#162744)',
+];
+
+function renderPerfCards(list, gridId, cardCls) {
+  const BADGE = {
+    healthy: `<span class="badge badge-h">● Healthy</span>`,
+    fatiguing: `<span class="badge badge-f">⚠ Fatiguing</span>`,
+  };
+  const isVid = f => ['MP4','MOV'].includes(f);
+  document.getElementById(gridId).innerHTML = list.map((c, i) => {
+    const cls = c.score >= 7 ? 'hi' : c.score >= 4 ? 'md' : 'lo';
+    const grad = PERF_GRADS[i % PERF_GRADS.length];
+    const thumbContent = isVid(c.fmt)
+      ? `<div class="cr-play">▶</div>`
+      : `<div style="width:100%;height:100%;background:${grad}"></div>`;
+    return `<div class="cr-card ${cardCls}" onclick="openCreative(${c.id},${c.dup})">
+      <div class="cr-thumb" style="background:${grad}">
+        ${thumbContent}
+        <span class="cr-fmt-ov">${c.fmt}</span>
+        ${c.dup ? `<span class="cr-dup-ov">DUPE</span>` : ''}
+        <span style="position:absolute;bottom:12px;left:12px;font-family:var(--font-m);font-size:11px;font-weight:700;color:rgba(255,255,255,.9);background:rgba(0,0,0,.55);padding:3px 8px;border-radius:5px;backdrop-filter:blur(4px)">CTR ${c.ctr.toFixed(2)}%</span>
+      </div>
+      <div class="cr-body">
+        <div class="cr-fname">${c.name}</div>
+        <div style="font-size:11px;color:var(--text-3);margin-top:-4px">${c.campaign}</div>
+        <div class="sbar"><div class="sbar-t"><div class="sbar-f ${cls}" style="width:${c.score*10}%"></div></div><span class="sn">${c.score}/10</span></div>
+        <div class="cr-foot">${BADGE[c.status]}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderPerf() {
+  const n = parseInt(document.getElementById('topN-select').value);
+  const sorted = [...perfCreatives].sort((a,b) => b.ctr - a.ctr);
+  renderPerfCards(sorted.slice(0, n), 'top-grid', 'top-card');
+  renderPerfCards(sorted.slice(-n).reverse(), 'bot-grid', 'bot-card');
+}
+
+function setDur(btn, _dur) {
+  document.querySelectorAll('.dur-btn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  renderPerf();
+}
+
 renderCampaigns();
 drawRadar();
+renderPerf();
 </script>
 </body>
 </html>
