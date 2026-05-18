@@ -3,17 +3,20 @@ import asyncio
 import ctypes
 import os
 import random
+import shutil
 import uuid
 from datetime import date, timedelta
 from pathlib import Path
 
 import asyncpg
-from PIL import Image, ImageDraw
+from PIL import Image
 
 DATABASE_URL = os.environ.get(
     "DATABASE_URL_SYNC",
     "postgresql://appuser:apppassword@localhost:5432/creative_opt"
 )
+
+BENCHMARK_DIR = Path(__file__).parent.parent / "data" / "benchmark" / "images" / "0"
 
 CAMPAIGNS = [
     ("Summer Fitness App 2024", ["facebook", "instagram"]),
@@ -28,35 +31,21 @@ CAMPAIGNS = [
     ("Streaming App Premium", ["facebook", "google"]),
 ]
 
-FORMATS = ["jpg", "png", "webp"]
-COLORS = [
-    "#FF5733", "#33FF57", "#3357FF", "#FF33A8", "#33FFF5",
-    "#FFD133", "#8C33FF", "#FF8C33", "#33FF8C", "#FF3333",
-]
+
+def _benchmark_images() -> list[Path]:
+    imgs = sorted(BENCHMARK_DIR.glob("*.jpg"))
+    if not imgs:
+        raise RuntimeError(f"No benchmark images found in {BENCHMARK_DIR}")
+    return imgs
 
 
-def hex_to_rgb(hex_color: str) -> tuple[int, int, int]:
-    h = hex_color.lstrip("#")
-    return int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
-
-
-def generate_creative_image(output_path: Path, campaign_name: str, index: int) -> tuple[int, int]:
-    import numpy as np
-    sizes = [(300, 250), (728, 90), (160, 600), (320, 50), (300, 600)]
-    width, height = sizes[index % len(sizes)]
-    rgb = hex_to_rgb(COLORS[index % len(COLORS)])
-    rng = np.random.RandomState(seed=index * 31337)
-    # Add per-pixel noise so each image has a unique pHash
-    base = np.full((height, width, 3), rgb, dtype=np.uint8)
-    noise = rng.randint(-30, 30, (height, width, 3), dtype=np.int16)
-    pixels = np.clip(base.astype(np.int16) + noise, 0, 255).astype(np.uint8)
-    img = Image.fromarray(pixels)
-    draw = ImageDraw.Draw(img)
-    draw.rectangle([10, 10, width - 10, height - 10], outline="white", width=2)
-    draw.text((15, max(10, height // 2 - 20)), f"[{index:02d}] {campaign_name[:16]}", fill="white")
-    draw.text((15, max(20, height - 30)), "DOWNLOAD NOW", fill="white")
+def copy_benchmark_image(output_path: Path, index: int) -> tuple[int, int]:
+    imgs = _benchmark_images()
+    src = imgs[index % len(imgs)]
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    img.save(str(output_path), format="JPEG")
+    shutil.copy2(str(src), str(output_path))
+    with Image.open(str(output_path)) as img:
+        width, height = img.size
     return width, height
 
 
@@ -122,9 +111,9 @@ async def main():
         campaign_name = CAMPAIGNS[i][0]
         for j in range(creatives_per_campaign):
             idx = i * creatives_per_campaign + j
-            filename = f"creative_{uuid.uuid4().hex[:8]}.jpg"
+            filename = f"creative_{uuid.uuid4().hex[:8]}.jpg"  # .jpg matches benchmark source format
             storage_path = storage_base / str(campaign_id) / filename
-            width, height = generate_creative_image(storage_path, campaign_name, idx)
+            width, height = copy_benchmark_image(storage_path, idx)
             file_size = storage_path.stat().st_size
             phash = compute_phash_signed(storage_path, idx)
 
