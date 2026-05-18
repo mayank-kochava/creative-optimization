@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { ProviderBadge } from '@/components/ProviderBadge';
 
 export default function AppHeader() {
   const path = usePathname();
@@ -15,6 +16,7 @@ export default function AppHeader() {
         <Link href="/campaigns" className={`nav-btn${path.startsWith('/campaigns') ? ' on' : ''}`}>Campaigns</Link>
         <Link href="/performance" className={`nav-btn${path === '/performance' ? ' on' : ''}`}>Performance</Link>
       </nav>
+      <ProviderBadge />
     </header>
   );
 }

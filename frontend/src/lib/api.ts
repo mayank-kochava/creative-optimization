@@ -108,6 +108,11 @@ export interface DuplicatePair {
   detected_at: string;
 }
 
+export interface ProviderStatus {
+  active: 'claude' | 'ollama';
+  available: string[];
+}
+
 // --- API calls ---
 
 export const api = {
@@ -142,4 +147,10 @@ export const api = {
 
   reanalyse: (id: number): Promise<{ status: string }> =>
     client.post(`/creatives/${id}/reanalyse`).then(r => r.data),
+
+  getProvider: (): Promise<ProviderStatus> =>
+    client.get('/provider').then(r => r.data),
+
+  setProvider: (provider: string): Promise<ProviderStatus> =>
+    client.post('/provider', { provider }).then(r => r.data),
 };
