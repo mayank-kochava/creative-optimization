@@ -17,15 +17,15 @@ from app.models.analysis import CreativeAnalysis
 from app.models.annotation import CreativeAnnotation
 from app.models.creative import Creative
 from app.config import settings
-from app.services.analysis_provider import OllamaProvider
+from app.services.provider_state import get_active_provider
 from app.services.annotation_pipeline import AnnotationPipeline
 
 
 async def main():
-    print("Pre-warming Ollama model qwen2.5vl:7b...")
-    provider = OllamaProvider(base_url=settings.ollama_base_url)
+    provider = get_active_provider()
+    print(f"Provider: {type(provider).__name__}")
     await provider.prewarm()
-    print("Model ready.\n")
+    print("Ready.\n")
 
     annotation_pipeline = AnnotationPipeline()
 
