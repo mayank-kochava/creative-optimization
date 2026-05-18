@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     max_video_size_bytes: int = 500 * 1024 * 1024
     phash_duplicate_threshold: int = 10
     benchmark_corpus_path: str = "data/benchmark/corpus.json"
+    anthropic_api_key: str = ""
+    analysis_provider: str = "claude"  # "claude" | "ollama"
 
     class Config:
         env_file = ".env"
