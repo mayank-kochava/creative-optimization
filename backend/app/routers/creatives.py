@@ -266,8 +266,10 @@ async def reanalyse_creative(creative_id: int, db: AsyncSession = Depends(get_db
         await db.commit()
 
     import asyncio
-    orchestrator = CreativeIngestionOrchestrator()
-    asyncio.create_task(orchestrator._run_analysis(creative_id, creative.storage_path))
+    storage_path = Path(creative.storage_path)
+    ext = storage_path.suffix.lstrip(".").lower()
+    orchestrator = get_orchestrator(db)
+    asyncio.create_task(orchestrator._run_analysis(creative_id, storage_path, ext))
     return {"status": "queued", "creative_id": creative_id}
 
 
