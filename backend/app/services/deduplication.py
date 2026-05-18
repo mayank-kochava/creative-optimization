@@ -45,8 +45,9 @@ class DeduplicationService:
         best_distance = settings.phash_duplicate_threshold + 1
 
         for row in rows:
-            # XOR works correctly in Python for both positive and negative ints
-            distance = bin(phash ^ row.phash).count("1")
+            # Mask to 64 bits before bin() — Python bin(-n) uses sign-magnitude, not
+            # two's complement, so negative XOR results give wrong popcount without mask.
+            distance = bin((phash ^ row.phash) & 0xFFFFFFFFFFFFFFFF).count("1")
             if distance <= settings.phash_duplicate_threshold and distance < best_distance:
                 best_distance = distance
                 best_match = row

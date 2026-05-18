@@ -37,6 +37,7 @@ class OllamaAnalysisResponse(BaseModel):
     weaknesses: list[str] = []
     recommendations: list[str] = []
     explanation: str
+    benchmark_percentile: Optional[int] = None
     status: Literal["complete", "degraded"] = "complete"
 
     @model_validator(mode="after")

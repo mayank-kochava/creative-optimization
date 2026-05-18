@@ -6,6 +6,7 @@ from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.config import settings
 from app.database import get_db
 from app.ingestion.orchestrator import CreativeIngestionOrchestrator, IngestionResult
 from app.models.annotation import CreativeAnnotation
@@ -27,7 +28,7 @@ from app.services.video_ingestion import VideoIngestionService
 router = APIRouter()
 
 # Module-level singletons — created once at import, not per-request
-_provider = OllamaProvider()
+_provider = OllamaProvider(base_url=settings.ollama_base_url)
 _annotation_pipeline = AnnotationPipeline()
 _video_service = VideoIngestionService()
 _content_classifier = ContentClassifier(_provider)
@@ -99,6 +100,7 @@ async def get_creative_detail(
             weaknesses=a.weaknesses,
             recommendations=a.recommendations,
             explanation=a.explanation,
+            benchmark_percentile=a.benchmark_percentile,
             status=a.status,
         )
 
