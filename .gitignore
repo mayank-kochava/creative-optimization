@@ -39,3 +39,5 @@ frontend/node_modules/
 
 # Docker
 *.log
+.gstack/
+frontend/tsconfig.tsbuildinfo
