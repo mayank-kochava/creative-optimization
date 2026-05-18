@@ -2,12 +2,18 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 
 class CampaignCreate(BaseModel):
     name: str
     platform_tags: list[str] = []
+
+    @field_validator("name")
+    @classmethod
+    def name_not_empty(cls, v: str) -> str:
+        assert v.strip(), "name required"
+        return v
 
 
 class CampaignResponse(BaseModel):
