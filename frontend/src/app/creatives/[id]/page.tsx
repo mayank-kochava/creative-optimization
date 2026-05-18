@@ -13,6 +13,11 @@ const ScoreRadar = dynamic(
   { ssr: false, loading: () => <div style={{ height: 240 }} /> }
 );
 
+const FatigueTrendChart = dynamic(
+  () => import('@/components/FatigueTrendChart').then(m => m.FatigueTrendChart),
+  { ssr: false }
+);
+
 interface Props { params: { id: string } }
 
 export default function CreativeDetailPage({ params }: Props) {
@@ -27,6 +32,10 @@ export default function CreativeDetailPage({ params }: Props) {
   const { data: duplicates = [] } = useSWR(
     `creative-${creativeId}-duplicates`,
     () => api.getDuplicates(creativeId)
+  );
+  const { data: fatigueData } = useSWR(
+    `creative-${creativeId}-fatigue`,
+    () => api.getFatigue(creativeId)
   );
 
   if (isLoading || !creative) {
@@ -172,6 +181,15 @@ export default function CreativeDetailPage({ params }: Props) {
           <div className="ph">Performance — Last 30 Days</div>
           <div className="pb">
             <KPITable kpi={creative.kpi} />
+          </div>
+        </div>
+      )}
+
+      {fatigueData && fatigueData.daily_ctr.some(d => d.ctr !== null) && (
+        <div className="panel" style={{ marginTop: 0 }}>
+          <div className="ph">CTR Trend — Last 14 Days</div>
+          <div className="pb">
+            <FatigueTrendChart data={fatigueData.daily_ctr} threshold={fatigueData.threshold} />
           </div>
         </div>
       )}
