@@ -70,9 +70,11 @@ class ClaudeProvider:
                 data = json.loads(raw)
                 return OllamaAnalysisResponse(**data)
             except (json.JSONDecodeError, ValidationError, KeyError, IndexError):
+                await asyncio.sleep(2 ** attempt)
                 if attempt == 2:
                     return DegradedAnalysisResponse()
             except Exception:
+                await asyncio.sleep(2 ** attempt)
                 if attempt == 2:
                     return DegradedAnalysisResponse()
 
@@ -99,7 +101,7 @@ class ClaudeProvider:
         for field in score_fields:
             try:
                 averaged_scores[field] = round(
-                    sum(getattr(r.scores, field) for r in results) / len(results)
+                    sum(getattr(r.scores, field) for r in results) / len(results), 1
                 )
             except (AttributeError, ZeroDivisionError):
                 averaged_scores[field] = 0
