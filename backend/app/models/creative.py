@@ -24,7 +24,7 @@ class Creative(Base):
     height: Mapped[Optional[int]] = mapped_column(Integer)
     duration_seconds: Mapped[Optional[float]] = mapped_column(Float)
     file_size_bytes: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    phash: Mapped[int] = mapped_column(BigInteger, nullable=False, unique=True)
+    phash: Mapped[int] = mapped_column(BigInteger, nullable=False)
     fatigue_status: Mapped[str] = mapped_column(String(20), nullable=False, server_default="insufficient_data")
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
