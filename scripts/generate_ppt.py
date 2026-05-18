@@ -266,20 +266,23 @@ slide = blank(p)
 fill_bg(slide, WHITE)
 box(slide, 0, 0, W, Inches(1.4), fill=NAVY)
 txt(slide, "Competitive Landscape",
-    Inches(0.5), Inches(0.28), Inches(12), Inches(0.85),
+    Inches(0.5), Inches(0.28), Inches(11), Inches(0.85),
     size=Pt(30), bold=True, color=WHITE)
+txt(slide, "AppsFlyer has element analysis + similarity grouping — not pHash. No competitor has annotation, NL explanation, or on-premise.",
+    Inches(0.5), Inches(0.95), Inches(12.3), Inches(0.35),
+    size=Pt(11), color=RGBColor(0xA8, 0xC4, 0xE8), italic=True, align=PP_ALIGN.LEFT)
 
 headers = ["Feature", "AppsFlyer", "Singular", "Segwise", "VidMob", "Kochava ✦"]
 col_widths = [Inches(3.2), Inches(1.6), Inches(1.6), Inches(1.6), Inches(1.6), Inches(1.8)]
 rows = [
-    ["AI Scoring (0–10)",          "✅", "✅", "❌", "✅", "✅"],
-    ["Natural Language Why",       "❌", "❌", "❌", "❌", "✅"],
-    ["Bounding-Box Annotation",    "❌", "❌", "❌", "❌", "✅"],
-    ["Duplicate Detection",        "❌", "❌", "❌", "❌", "✅"],
-    ["Video Frame Analysis",       "❌", "partial","❌", "✅", "✅"],
-    ["On-Premise Model",           "❌", "❌", "❌", "❌", "✅"],
-    ["No MMP SDK Required",        "❌", "❌", "❌", "✅", "✅"],
-    ["Closed-Loop Optimization",   "❌", "❌", "❌", "❌", "Ph2"],
+    ["AI Scoring (0–10)",           "✅", "✅", "❌", "✅", "✅"],
+    ["Natural Language 'Why'",      "❌", "❌", "❌", "❌", "✅"],
+    ["Bounding-Box Annotation",     "❌", "❌", "❌", "❌", "✅"],
+    ["pHash Duplicate Detection",   "❌", "❌", "❌", "❌", "✅"],
+    ["Video Frame Analysis",        "partial","partial","❌", "✅", "✅"],
+    ["On-Premise / Local Model",    "❌", "❌", "❌", "❌", "✅"],
+    ["No SDK / MMP Required",       "❌", "❌", "❌", "✅", "✅"],
+    ["Closed-Loop Optimization",    "❌", "❌", "❌", "❌", "Ph2"],
 ]
 
 row_h = Inches(0.46)
