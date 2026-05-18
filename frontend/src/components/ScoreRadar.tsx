@@ -24,15 +24,15 @@ export function ScoreRadar({ scores }: Props) {
 
   const config = {
     data,
-    xField: 'dimension',
-    yField: 'score',
+    encode: { x: 'dimension', y: 'score' },
+    scale: { y: { domain: [0, 10] } },
     area: { style: { fillOpacity: 0.3 } },
-    scale: { y: { min: 0, max: 10, tickCount: 5 } },
     axis: {
-      y: { gridAreaFill: 'rgba(0,0,0,0.04)', label: false, gridStroke: '#999' },
+      y: { label: false, gridStroke: '#ccc', tickCount: 5 },
     },
-    tooltip: { items: [{ field: 'score', name: 'Score' }] },
+    tooltip: { items: [{ channel: 'y', name: 'Score' }] },
+    height: 300,
   };
 
-  return <Radar {...config} style={{ height: 300 }} />;
+  return <Radar {...config} />;
 }
