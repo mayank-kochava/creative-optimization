@@ -4,8 +4,6 @@ import { usePathname } from 'next/navigation';
 
 export default function AppHeader() {
   const path = usePathname();
-  const onDash = path === '/';
-
   return (
     <header className="hdr">
       <Link href="/" className="logo">
@@ -13,7 +11,9 @@ export default function AppHeader() {
         Creative Intelligence
       </Link>
       <nav className="hdr-nav">
-        <Link href="/" className={`nav-btn${onDash ? ' on' : ''}`}>Dashboard</Link>
+        <Link href="/" className={`nav-btn${path === '/' ? ' on' : ''}`}>Dashboard</Link>
+        <Link href="/campaigns" className={`nav-btn${path.startsWith('/campaigns') ? ' on' : ''}`}>Campaigns</Link>
+        <Link href="/performance" className={`nav-btn${path === '/performance' ? ' on' : ''}`}>Performance</Link>
       </nav>
     </header>
   );
