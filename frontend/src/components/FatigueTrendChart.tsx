@@ -20,23 +20,23 @@ export function FatigueTrendChart({ data, threshold }: Props) {
 
   const config = {
     data: points,
-    xField: 'date',
-    yField: 'ctr',
+    encode: { x: 'date', y: 'ctr' },
+    style: { stroke: '#f5222d', lineWidth: 2 },
+    point: { size: 3, shape: 'point' },
     smooth: true,
-    point: { size: 3, shape: 'circle' as const },
-    line: { style: { stroke: '#f5222d', lineWidth: 2 } },
-    yAxis: {
-      title: { text: 'CTR %' },
-      label: { formatter: (v: string) => `${v}%` },
+    axis: {
+      y: {
+        title: 'CTR %',
+        labelFormatter: (v: number) => `${v}%`,
+      },
     },
     tooltip: {
-      formatter: (d: { ctr: number }) => ({ name: 'CTR', value: `${d.ctr}%` }),
+      items: [{ field: 'ctr', name: 'CTR', valueFormatter: (v: number) => `${v}%` }],
     },
     annotations: [
       {
-        type: 'line' as const,
-        start: ['min', threshold * 100] as [string, number],
-        end: ['max', threshold * 100] as [string, number],
+        type: 'lineY',
+        data: [+(threshold * 100).toFixed(2)],
         style: { stroke: '#faad14', lineDash: [4, 4], lineWidth: 1 },
       },
     ],
