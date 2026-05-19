@@ -46,16 +46,17 @@ make stop     # stop background servers
 - Frontend: http://localhost:3000
 - API docs: http://localhost:8000/docs
 
-## Reset demo data (re-analyse all creatives with active AI provider)
+## Reset options
 
 ```bash
-make reset    # truncate analyses + recompute (~3 min)
+make seed     # wipe everything + new images from benchmark + re-analyse (~3 min)
+make reset    # keep existing creatives/KPIs, just re-analyse with active provider (~3 min)
 ```
 
-## One-shot demo start (reset + start all servers)
+## One-shot demo start (full reseed + start all servers)
 
 ```bash
-make demo
+make demo     # = make seed + start all servers
 ```
 
 ## Test
