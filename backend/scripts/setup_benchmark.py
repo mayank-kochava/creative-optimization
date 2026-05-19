@@ -18,11 +18,16 @@ CVPR_SUBFOLDERS = 1  # subfolder-0 has 5673 images — one zip is enough
 MAX_PER_SUBFOLDER = 500  # 500 shuffled picks from 5673 = plenty of variety
 
 
+_NSFW_CLASSES = {
+    'FEMALE_BREAST_EXPOSED', 'FEMALE_GENITALIA_EXPOSED',
+    'MALE_GENITALIA_EXPOSED', 'BUTTOCKS_EXPOSED', 'ANUS_EXPOSED',
+}
+
 def _filter_nsfw(directory: Path) -> None:
-    """Remove NSFW images from directory using nudenet classifier."""
+    """Remove NSFW images from directory using nudenet detector."""
     try:
-        from nudenet import NudeClassifier
-        classifier = NudeClassifier()
+        from nudenet import NudeDetector
+        detector = NudeDetector()
     except Exception:
         print("  nudenet not available, skipping NSFW filter")
         return
@@ -30,9 +35,8 @@ def _filter_nsfw(directory: Path) -> None:
     removed = 0
     for path in paths:
         try:
-            result = classifier.classify(str(path))
-            score = result.get(str(path), {}).get("unsafe", 0.0)
-            if score > 0.6:
+            detections = detector.detect(str(path))
+            if any(d.get("class") in _NSFW_CLASSES and d.get("score", 0) > 0.5 for d in detections):
                 path.unlink()
                 removed += 1
         except Exception:
