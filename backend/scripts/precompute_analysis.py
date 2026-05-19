@@ -10,7 +10,7 @@ import asyncio
 import sys
 from pathlib import Path
 
-from sqlalchemy import select, text
+from sqlalchemy import select, text, update
 
 from app.database import AsyncSessionLocal
 from app.models.analysis import CreativeAnalysis
@@ -18,6 +18,7 @@ from app.models.annotation import CreativeAnnotation
 from app.models.creative import Creative
 from app.services.provider_state import get_active_provider
 from app.services.annotation_pipeline import AnnotationPipeline
+from app.services.fatigue_detector import FatigueDetector
 
 
 async def main(reset: bool = False):
@@ -101,6 +102,19 @@ async def main(reset: bool = False):
                 print(f"  ✗ Error: {e}")
                 await db.rollback()
 
+    print(f"\nRecomputing fatigue status for all creatives...")
+    async with AsyncSessionLocal() as db:
+        all_creatives = (await db.execute(select(Creative.id))).scalars().all()
+        detector = FatigueDetector(db)
+        counts = {"healthy": 0, "fatiguing": 0, "insufficient_data": 0}
+        for cid in all_creatives:
+            status = await detector.compute_fatigue_status(cid)
+            await db.execute(
+                update(Creative).where(Creative.id == cid).values(fatigue_status=status)
+            )
+            counts[status] += 1
+        await db.commit()
+    print(f"  healthy={counts['healthy']} fatiguing={counts['fatiguing']} insufficient_data={counts['insufficient_data']}")
     print(f"\nPre-computation complete!")
 
 
