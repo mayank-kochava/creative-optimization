@@ -49,6 +49,7 @@ export function AnnotatedImage({ imageUrl, annotations, width = 400, height = 30
               <rect
                 x={x} y={y} width={bw} height={bh}
                 fill="none" stroke={color} strokeWidth={2}
+                vectorEffect="non-scaling-stroke"
                 style={{ pointerEvents: 'all', cursor: 'pointer' }}
               />
               {ann.annotation_type === 'cta' && (
