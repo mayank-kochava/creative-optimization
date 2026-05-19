@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1440">
+<title>Creative Core Engine — Kochava</title>
+<style>
+  :root {
+    --navy: #0b1f3a;
+    --blue: #1a4c8e;
+    --orange: #e8621a;
+    --orange-light: #fdf0e8;
+    --white: #ffffff;
+    --gray-100: #f5f7fa;
+    --gray-200: #e8ecf0;
+    --gray-400: #8a9bb0;
+    --gray-600: #4a5568;
+    --green: #1a7a4a;
+    --green-light: #e6f4ed;
+    --red: #c0392b;
+    --red-light: #fdecea;
+    --yellow: #d4a017;
+    --yellow-light: #fdf8e6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--navy);
+    color: var(--navy);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .deck { position: relative; }
+  .slide {
+    display: none;
+    width: 1440px;
+    min-height: 820px;
+    background: var(--white);
+    position: relative;
+    overflow: hidden;
+  }
+  .slide.active { display: flex; flex-direction: column; }
+
+  /* Header stripe */
+  .slide-header {
+    background: var(--navy);
+    color: var(--white);
+    padding: 18px 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .slide-header .kochava { font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--orange); }
+  .slide-header .slide-title { font-size: 15px; font-weight: 600; color: rgba(255,255,255,0.9); }
+  .slide-header .slide-num { font-size: 12px; color: var(--gray-400); }
+
+  /* Body */
+  .slide-body { flex: 1; padding: 36px 48px; display: flex; flex-direction: column; gap: 20px; }
+
+  /* Title slide */
+  .title-slide .slide-body {
+    background: linear-gradient(135deg, var(--navy) 0%, #1a3560 100%);
+    justify-content: center;
+    align-items: flex-start;
+    color: white;
+  }
+  .title-slide .big-title { font-size: 56px; font-weight: 800; line-height: 1.1; color: white; }
+  .title-slide .big-title span { color: var(--orange); }
+  .title-slide .sub { font-size: 20px; color: rgba(255,255,255,0.7); margin-top: 16px; max-width: 640px; }
+  .title-slide .meta { margin-top: 40px; font-size: 13px; color: rgba(255,255,255,0.4); }
+  .title-slide .stat-row { display: flex; gap: 48px; margin-top: 32px; }
+  .title-slide .stat { }
+  .title-slide .stat-num { font-size: 36px; font-weight: 800; color: var(--orange); }
+  .title-slide .stat-label { font-size: 12px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 1px; }
+
+  /* Section title */
+  .section-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--orange);
+    margin-bottom: 4px;
+  }
+  .h1 { font-size: 32px; font-weight: 800; color: var(--navy); line-height: 1.1; }
+  .h2 { font-size: 22px; font-weight: 700; color: var(--navy); }
+  .h3 { font-size: 15px; font-weight: 700; color: var(--navy); }
+  .muted { color: var(--gray-400); font-size: 13px; }
+
+  /* Two-col layout */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  .col-60-40 { display: grid; grid-template-columns: 60fr 40fr; gap: 28px; }
+  .col-40-60 { display: grid; grid-template-columns: 40fr 60fr; gap: 28px; }
+
+  /* Cards */
+  .card {
+    background: var(--gray-100);
+    border-radius: 10px;
+    padding: 20px;
+    border: 1px solid var(--gray-200);
+  }
+  .card.highlight { background: var(--navy); color: white; }
+  .card.highlight .h3 { color: white; }
+  .card.orange { background: var(--orange); color: white; }
+  .card.orange .h3 { color: white; }
+  .card.green { background: var(--green-light); border-color: #b2d8c4; }
+  .card.warn { background: var(--yellow-light); border-color: #e8d4a0; }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { background: var(--navy); color: white; padding: 9px 12px; text-align: left; font-weight: 600; white-space: nowrap; }
+  td { padding: 8px 12px; border-bottom: 1px solid var(--gray-200); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:nth-child(even) td { background: var(--gray-100); }
+  .ours td { background: #e8f0fe !important; font-weight: 600; }
+  .ours td:first-child { color: var(--blue); }
+
+  /* Badges */
+  .yes { display: inline-block; background: var(--green-light); color: var(--green); padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 12px; }
+  .no { display: inline-block; background: var(--red-light); color: var(--red); padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 12px; }
+  .partial { display: inline-block; background: var(--yellow-light); color: var(--yellow); padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 12px; }
+  .badge { display: inline-block; background: var(--orange-light); color: var(--orange); padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+  .badge-blue { display: inline-block; background: #e8f0fe; color: var(--blue); padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+
+  /* Lists */
+  .check-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+  .check-list li { padding-left: 24px; position: relative; font-size: 13px; line-height: 1.4; }
+  .check-list li::before { content: "✓"; position: absolute; left: 0; color: var(--green); font-weight: 700; }
+  .cross-list li::before { content: "✗"; color: var(--red); }
+  .bullet-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+  .bullet-list li { padding-left: 20px; position: relative; font-size: 13px; }
+  .bullet-list li::before { content: "▸"; position: absolute; left: 0; color: var(--orange); }
+
+  /* Architecture diagram (CSS boxes) */
+  .arch { display: flex; align-items: center; gap: 0; }
+  .arch-box {
+    background: var(--navy);
+    color: white;
+    padding: 14px 16px;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    min-width: 100px;
+  }
+  .arch-box.orange-box { background: var(--orange); }
+  .arch-box.blue-box { background: var(--blue); }
+  .arch-box.green-box { background: var(--green); }
+  .arch-arrow { font-size: 20px; color: var(--gray-400); padding: 0 6px; flex-shrink: 0; }
+  .arch-sub { font-size: 10px; font-weight: 400; color: rgba(255,255,255,0.7); margin-top: 4px; }
+  .arch-group { display: flex; flex-direction: column; gap: 6px; }
+  .arch-group .arch-box { font-size: 11px; padding: 8px 12px; }
+
+  /* Pipeline row */
+  .pipeline { display: flex; align-items: stretch; gap: 0; width: 100%; }
+  .pipe-step {
+    flex: 1;
+    background: var(--gray-100);
+    border: 1px solid var(--gray-200);
+    padding: 14px 12px;
+    position: relative;
+    text-align: center;
+  }
+  .pipe-step:not(:last-child)::after {
+    content: "▶";
+    position: absolute;
+    right: -11px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--orange);
+    font-size: 16px;
+    z-index: 1;
+  }
+  .pipe-step-title { font-size: 12px; font-weight: 700; color: var(--navy); }
+  .pipe-step-sub { font-size: 11px; color: var(--gray-600); margin-top: 4px; }
+  .pipe-step.highlight-pipe { background: var(--navy); color: white; border-color: var(--navy); }
+  .pipe-step.highlight-pipe .pipe-step-title { color: white; }
+  .pipe-step.highlight-pipe .pipe-step-sub { color: rgba(255,255,255,0.6); }
+  .pipe-step.orange-pipe { background: var(--orange); color: white; border-color: var(--orange); }
+  .pipe-step.orange-pipe .pipe-step-title { color: white; }
+  .pipe-step.orange-pipe .pipe-step-sub { color: rgba(255,255,255,0.7); }
+
+  /* Nav */
+  .nav {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    background: rgba(11,31,58,0.95);
+    padding: 10px 20px;
+    border-radius: 40px;
+    z-index: 100;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+  }
+  .nav button {
+    background: none;
+    border: 1px solid rgba(255,255,255,0.2);
+    color: white;
+    padding: 6px 18px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.15s;
+  }
+  .nav button:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.4); }
+  .nav button:disabled { opacity: 0.3; cursor: not-allowed; }
+  .nav .counter { font-size: 12px; color: rgba(255,255,255,0.5); min-width: 60px; text-align: center; }
+  .nav .dots { display: flex; gap: 6px; align-items: center; }
+  .nav .dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.2); cursor: pointer; transition: all 0.15s; }
+  .nav .dot.active { background: var(--orange); width: 18px; border-radius: 3px; }
+
+  /* Comparison col highlight */
+  td.us { background: #e8f0fe !important; font-weight: 700; color: var(--blue); }
+  th.us { background: var(--blue); }
+
+  /* Divider */
+  .divider { border: none; border-top: 1px solid var(--gray-200); }
+
+  /* Info row */
+  .info-row { display: flex; gap: 24px; }
+  .info-item { flex: 1; }
+  .info-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--gray-400); margin-bottom: 4px; }
+  .info-value { font-size: 14px; font-weight: 600; color: var(--navy); }
+
+  /* Cost table */
+  .cost-row { display: flex; align-items: center; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--gray-200); }
+  .cost-row:last-child { border: none; }
+  .cost-label { flex: 1; font-size: 13px; font-weight: 600; }
+  .cost-val { font-size: 15px; font-weight: 800; color: var(--orange); min-width: 90px; text-align: right; }
+  .cost-sub { font-size: 11px; color: var(--gray-400); min-width: 140px; text-align: right; }
+
+  /* Roadmap */
+  .roadmap { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .rm-phase { background: var(--gray-100); border-radius: 8px; border: 1px solid var(--gray-200); padding: 16px; }
+  .rm-phase.current { background: var(--navy); color: white; border-color: var(--navy); }
+  .rm-phase.current .rm-q { color: var(--orange); }
+  .rm-phase.current .rm-name { color: white; }
+  .rm-phase.current .rm-item { color: rgba(255,255,255,0.8); }
+  .rm-q { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--orange); margin-bottom: 6px; }
+  .rm-name { font-size: 14px; font-weight: 700; color: var(--navy); margin-bottom: 10px; }
+  .rm-item { font-size: 12px; color: var(--gray-600); padding: 3px 0; padding-left: 14px; position: relative; }
+  .rm-item::before { content: "·"; position: absolute; left: 4px; color: var(--orange); font-weight: 900; font-size: 16px; line-height: 1; }
+
+  /* Moat box */
+  .moat-box { background: var(--navy); border-radius: 12px; padding: 24px; color: white; display: flex; flex-direction: column; gap: 8px; }
+  .moat-num { font-size: 48px; font-weight: 900; color: var(--orange); line-height: 1; }
+  .moat-title { font-size: 18px; font-weight: 700; color: white; }
+  .moat-body { font-size: 13px; color: rgba(255,255,255,0.7); line-height: 1.6; }
+  .moat-why { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--orange); margin-top: 8px; }
+
+  /* Gap strip */
+  .gap-strip { background: var(--orange); color: white; padding: 12px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; }
+
+  /* Ask items */
+  .ask-item { display: flex; gap: 16px; align-items: flex-start; padding: 14px 0; border-bottom: 1px solid var(--gray-200); }
+  .ask-item:last-child { border: none; }
+  .ask-icon { font-size: 24px; width: 36px; flex-shrink: 0; }
+  .ask-title { font-size: 14px; font-weight: 700; color: var(--navy); }
+  .ask-body { font-size: 13px; color: var(--gray-600); margin-top: 4px; }
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+<!-- ============================================================ SLIDE 1: TITLE -->
+<div class="slide active title-slide">
+  <div class="slide-header">
+    <span class="kochava">Kochava</span>
+    <span class="slide-title">Creative Core Engine</span>
+    <span class="slide-num">1 / 11</span>
+  </div>
+  <div class="slide-body">
+    <div>
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--orange);margin-bottom:12px;">Internal Research Deck</div>
+      <div class="big-title">Creative Core<br><span>Engine</span></div>
+      <div class="sub">Production-ready creative intelligence — built on Kochava Attribution data, deployable on-premise, fine-tuned to outperform every competitor on the market.</div>
+    </div>
+    <div class="stat-row">
+      <div class="stat">
+        <div class="stat-num">$64B</div>
+        <div class="stat-label">Mobile ad spend 2025</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">56%</div>
+        <div class="stat-label">Performance variance from creative</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">0</div>
+        <div class="stat-label">Competitors with our triple</div>
+      </div>
+    </div>
+    <div class="meta">May 2026 · Research for Charles presentation · Confidential</div>
+  </div>
+</div>
+
+<!-- ============================================================ SLIDE 2: PROBLEM -->
+<div class="slide">
+  <div class="slide-header">
+    <span class="kochava">Kochava</span>
+    <span class="slide-title">The Problem</span>
+    <span class="slide-num">2 / 11</span>
+  </div>
+  <div class="slide-body">
+    <div>
+      <div class="section-label">Problem</div>
+      <div class="h1">Marketers are flying blind<br>on creative decisions</div>
+    </div>
+    <div class="three-col">
+      <div class="card">
+        <div class="h3" style="color:var(--orange);">No explainability</div>
+        <div style="margin-top:10px;font-size:13px;color:var(--gray-600);">Tools tell you a creative has a 0.8% CTR. None explain <em>why</em> the hero shot works and the lifestyle shot doesn't. Creative teams guess.</div>
+      </div>
+      <div class="card">
+        <div class="h3" style="color:var(--orange);">No early warning</div>
+        <div style="margin-top:10px;font-size:13px;color:var(--gray-600);">Creative fatigue costs 20–40% of a campaign's ROAS before anyone notices. By the time the dashboard shows decline, you've burned budget.</div>
+      </div>
+      <div class="card">
+        <div class="h3" style="color:var(--orange);">No scale</div>
+        <div style="margin-top:10px;font-size:13px;color:var(--gray-600);">Kochava customers run 10,000+ creative variations per month across Meta, TikTok, Google, AppLovin. Manual review is impossible.</div>
+      </div>
+    </div>
+    <div class="card highlight">
+      <div style="display:flex;gap:24px;align-items:center;">
+        <div style="flex:1;">
+          <div class="h3">The attribution gap</div>
+          <div style="font-size:13px;color:rgba(255,255,255,0.7);margin-top:8px;">AppsFlyer and Singular both offer creative intelligence — but only for their own attribution customers. Kochava's 8,000+ customers have no equivalent. There is no dedicated creative intelligence layer built on Kochava data.</div>
+        </div>
+        <div style="font-size:48px;font-weight:900;color:var(--orange);">8K+</div>
+        <div style="font-size:13px;color:rgba(255,255,255,0.5);">Kochava customers<br>currently unserved</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ SLIDE 3: SOLUTION -->
+<div class="slide">
+  <div class="slide-header">
+    <span class="kochava">Kochava</span>
+    <span class="slide-title">The Solution</span>
+    <span class="slide-num">3 / 11</span>
+  </div>
+  <div class="slide-body">
+    <div>
+      <div class="section-label">Solution</div>
+      <div class="h1">Three features. One closed loop.</div>
+    </div>
+    <div class="three-col">
+      <div class="card">
+        <div style="font-size:32px;font-weight:900;color:var(--orange);">F1</div>
+        <div class="h3">Structured Scoring</div>
+        <div style="font-size:12px;color:var(--gray-600);margin-top:8px;">0–10 score across 7 dimensions per creative. Instant, consistent, at production scale.</div>
+        <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:4px;">
+          <div style="font-size:11px;background:var(--gray-100);padding:4px 8px;border-radius:4px;">Hook strength</div>
+          <div style="font-size:11px;background:var(--gray-100);padding:4px 8px;border-radius:4px;">Visual clarity</div>
+          <div style="font-size:11px;background:var(--gray-100);padding:4px 8px;border-radius:4px;">CTA strength</div>
+          <div style="font-size:11px;background:var(--gray-100);padding:4px 8px;border-radius:4px;">Brand presence</div>
+          <div style="font-size:11px;background:var(--gray-100);padding:4px 8px;border-radius:4px;">Emotional pull</div>
+          <div style="font-size:11px;background:var(--gray-100);padding:4px 8px;border-radius:4px;">Text legibility</div>
+          <div style="font-size:11px;background:var(--gray-100);padding:4px 8px;border-radius:4px;grid-column:1/-1;text-align:center;">Persuasion strategy</div>
+        </div>
+      </div>
+      <div class="card">
+        <div style="font-size:32px;font-weight:900;color:var(--orange);">F2</div>
+        <div class="h3">NL Explanation</div>
+        <div style="font-size:12px;color:var(--gray-600);margin-top:8px;">Natural language explanation of why a creative works — or doesn't. Actionable brief for designers.</div>
+        <div style="margin-top:12px;background:var(--gray-200);border-radius:6px;padding:10px;font-size:12px;color:var(--navy);font-style:italic;">"High-contrast product close-up with urgency CTA drives strong hook. Weak social proof — add a user testimonial to boost mid-funnel trust."</div>
+      </div>
+      <div class="card">
+        <div style="font-size:32px;font-weight:900;color:var(--orange);">F3</div>
+        <div class="h3">Visual Annotations</div>
+        <div style="font-size:12px;color:var(--gray-600);margin-top:8px;">Bounding boxes on face, text, and CTA regions. Overlaid directly on the creative asset.</div>
+        <div style="margin-top:12px;display:flex;flex-direction:column;gap:6px;">
+          <div style="font-size:11px;display:flex;align-items:center;gap:8px;"><span style="width:10px;height:10px;background:#e74c3c;display:inline-block;border-radius:2px;"></span>Face detection — YOLOv11, 200+ FPS, CPU-only</div>
+          <div style="font-size:11px;display:flex;align-items:center;gap:8px;"><span style="width:10px;height:10px;background:#2980b9;display:inline-block;border-radius:2px;"></span>Text regions — Grounding DINO, 50ms/image</div>
+          <div style="font-size:11px;display:flex;align-items:center;gap:8px;"><span style="width:10px;height:10px;background:#27ae60;display:inline-block;border-radius:2px;"></span>CTA detection — Grounding DINO + Tesseract</div>
+        </div>
+        <div class="badge" style="margin-top:12px;font-size:11px;">Zero competitors have this</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+      <div class="card" style="background:var(--green-light);border-color:#b2d8c4;">
+        <div class="h3">Closed Loop — Level 2</div>
+        <div style="font-size:12px;color:var(--gray-600);margin-top:6px;">Recommendations with human-in-loop approval. Suggests budget reallocation and A/B tests based on score trajectory + attribution outcomes.</div>
+      </div>
+      <div class="card" style="background:var(--green-light);border-color:#b2d8c4;">
+        <div class="h3">Closed Loop — Level 3 (roadmap)</div>
+        <div style="font-size:12px;color:var(--gray-600);margin-top:6px;">Thompson Sampling multi-armed bandit. Auto-optimize creative allocation + DSP bid adjustments. No human required.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ SLIDE 4: COMPETITIVE MATRIX -->
+<div class="slide">
+  <div class="slide-header">
+    <span class="kochava">Kochava</span>
+    <span class="slide-title">Competitive Landscape</span>
+    <span class="slide-num">4 / 11</span>
+  </div>
+  <div class="slide-body" style="gap:14px;">
+    <div>
+      <div class="section-label">Verified Research — Primary Sources</div>
+      <div class="h1">We have capabilities nobody else has</div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Feature</th>
+          <th class="us">Creative Core Engine</th>
+          <th>AppsFlyer Creative Opt.</th>
+          <th>Singular Creative IQ</th>
+          <th>VidMob Maddie</th>
+          <th>CreativeX</th>
+          <th>Segwise</th>
+          <th>Motion</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Score 0–10</strong></td>
+          <td class="us"><span class="yes">✓ 7 dims</span></td>
+          <td><span class="no">✗</span> pre-flight, no scale</td>
+          <td><span class="no">✗</span> 17 categories</td>
+          <td><span class="no">✗</span> PASS/FAIL</td>
+          <td><span class="no">✗</span> brand CQS</td>
+          <td><span class="no">✗</span></td>
+          <td><span class="no">✗</span></td>
+        </tr>
+        <tr>
+          <td><strong>NL explanation</strong></td>
+          <td class="us"><span class="yes">✓</span></td>
+          <td><span class="no">✗</span> element correlation</td>
+          <td><span class="no">✗</span></td>
+          <td><span class="yes">✓</span> Maddie AI</td>
+          <td><span class="no">✗</span></td>
+          <td><span class="no">✗</span></td>
+          <td><span class="yes">✓</span> DTC only</td>
+        </tr>
+        <tr>
+          <td><strong>Bounding boxes</strong></td>
+          <td class="us"><span class="yes">✓ face/text/CTA</span></td>
+          <td><span class="no">✗</span> timeline view only</td>
+          <td><span class="no">✗</span></td>
+          <td><span class="no">✗</span></td>
+          <td><span class="no">✗</span></td>
+          <td><span class="no">✗</span></td>
+          <td><span class="no">✗</span></td>
+        </tr>
+        <tr>
+          <td><strong>Fatigue detection</strong></td>
+          <td class="us"><span class="yes">✓ WoW CTR</span></td>
+          <td><span class="partial">~</span> 24h lag</td>
+          <td><span class="no">✗</span></td>
+          <td><span class="no">✗</span></td>
+          <td><span class="no">✗</span></td>
+          <td><span class="yes">✓</span></td>
+          <td><span class="no">✗</span></td>
+        </tr>
+        <tr>
+          <td><strong>Variant dedup</strong></td>
+          <td class="us"><span class="yes">✓ pHash</span></td>
+          <td><span class="yes">✓</span> AI match</td>
+          <td><span class="yes">✓</span> content hash</td>
+          <td><span class="no">✗</span></td>
+          <td><span class="no">✗</span></td>
+          <td><span class="no">✗</span></td>
+          <td><span class="no">✗</span></td>
+        </tr>
+        <tr>
+          <td><strong>Standalone</strong></td>
+          <td class="us"><span class="yes">✓</span></td>
+          <td><span class="no">✗</span> AF MMP required</td>
+          <td><span class="no">✗</span> Singular required</td>
+          <td><span class="yes">✓</span></td>
+          <td><span class="yes">✓</span></td>
+          <td><span class="yes">✓</span></td>
+          <td><span class="yes">✓</span></td>
+        </tr>
+        <tr>
+          <td><strong>On-premise</strong></td>
+          <td class="us"><span class="yes">✓ roadmap</span></td>
+          <td><span class="no">✗</span> SaaS only</td>
+          <td><span class="no">✗</span> private cloud add-on</td>
+          <td><span class="no">✗</span></td>
+          <td><span class="no">✗</span></td>
+          <td><span class="no">✗</span></td>
+          <td><span class="no">✗</span></td>
+        </tr>
+        <tr>
+          <td><strong>Attribution-trained</strong></td>
+          <td class="us"><span class="yes">✓ Kochava loop</span></td>
+          <td><span class="no">✗</span></td>
+          <td><span class="no">✗</span></td>
+          <td><span class="no">✗</span></td>
+          <td><span class="no">✗</span></td>
+          <td><span class="no">✗</span></td>
+          <td><span class="no">✗</span></td>
+        </tr>
+        <tr>
+          <td><strong>Mobile app networks</strong></td>
+          <td class="us"><span class="yes">✓</span></td>
+          <td><span class="yes">✓</span> 9+ networks</td>
+          <td><span class="yes">✓</span> 70+ networks</td>
+          <td><span class="yes">✓</span></td>
+          <td><span class="yes">✓</span></td>
+          <td><span class="yes">✓</span></td>
+          <td><span class="no">✗</span> DTC only</td>
+        </tr>
+        <tr>
+          <td><strong>Pricing</strong></td>
+          <td class="us"><span class="badge-blue">TBD</span></td>
+          <td>Enterprise add-on</td>
+          <td>Bundled in MMP</td>
+          <td>$500K+/yr</td>
+          <td>Enterprise only</td>
+          <td>$299/mo</td>
+          <td>$250/mo</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="gap-strip">Zero competitors offer Score + NL Explanation + Bounding Boxes together. Zero competitors have an attribution-trained model. Zero competitors offer on-premise.</div>
+  </div>
+</div>
+
+<!-- ============================================================ SLIDE 5: COMPETITOR DEEP DIVE -->
+<div class="slide">
+  <div class="slide-header">
+    <span class="kochava">Kochava</span>
+    <span class="slide-title">Top 3 Competitors — Verified Weaknesses</span>
+    <span class="slide-num">5 / 11</span>
+  </div>
+  <div class="slide-body" style="gap:16px;">
+    <div>
+      <div class="section-label">Primary-source research · May 2026</div>
+      <div class="h1">Their biggest gaps are our biggest opportunities</div>
+    </div>
+    <div class="three-col">
+      <div>
+        <div class="card highlight" style="margin-bottom:10px;">
+          <div class="h3">AppsFlyer Creative Opt.</div>
+          <div style="font-size:12px;color:rgba(255,255,255,0.6);margin-top:4px;">Measurement Suite · Dec 2025 update</div>
+        </div>
+        <ul class="cross-list check-list" style="font-size:13px;gap:6px;">
+          <li>No 0–10 score — "pre-flight scoring" has no public numeric scale</li>
+          <li>No NL explanation — shows element-to-metric correlation only (which elements appear, not why they work)</li>
+          <li>No bounding boxes — "AI Investigate" is a video timeline, not spatial overlay</li>
+          <li>Requires AppsFlyer attribution SDK — <strong>cannot be used standalone</strong></li>
+          <li>24-hour update cycle — fatigue detection is not real-time</li>
+          <li>Max 15 custom dimensions via CSV — not self-serve</li>
+          <li>Creative Premium = Enterprise add-on on top of existing $1K+/mo attribution contract</li>
+        </ul>
+      </div>
+      <div>
+        <div class="card highlight" style="margin-bottom:10px;">
+          <div class="h3">Singular Creative IQ</div>
+          <div style="font-size:12px;color:rgba(255,255,255,0.6);margin-top:4px;">17 AI tags · MMP-bundled</div>
+        </div>
+        <ul class="cross-list check-list" style="font-size:13px;gap:6px;">
+          <li>17 dimensions are <strong>categorical tags</strong> (color names, true/false, text descriptions) — not scores</li>
+          <li>No NL explanation of why a creative works</li>
+          <li>No bounding box annotations</li>
+          <li>No fatigue detection — customer case studies describe fatigue as unsolved pain</li>
+          <li>Cannot aggregate AI tag data in-platform — requires CSV export + manual pivot</li>
+          <li>Custom dimensions require contacting support (not self-serve)</li>
+          <li>Requires Singular attribution — analytics-only = no ROI on creatives</li>
+          <li>7-day retroactive tagging limit on first setup</li>
+        </ul>
+      </div>
+      <div>
+        <div class="card highlight" style="margin-bottom:10px;">
+          <div class="h3">VidMob Maddie</div>
+          <div style="font-size:12px;color:rgba(255,255,255,0.6);margin-top:4px;">NL insights · PASS/FAIL scoring</div>
+        </div>
+        <ul class="cross-list check-list" style="font-size:13px;gap:6px;">
+          <li>Scoring is <strong>PASS/FAIL</strong>, not 0–10 — no fine-grained performance prediction</li>
+          <li>No bounding box annotations</li>
+          <li>No creative fatigue detection</li>
+          <li>24-hour analysis latency — not real-time</li>
+          <li>$500K+ enterprise contracts — inaccessible to mid-market</li>
+          <li>Attribution-agnostic — no closed loop to actual install/ROAS outcomes</li>
+          <li>Brand-safety focus, not performance intelligence</li>
+        </ul>
+        <div class="card warn" style="margin-top:10px;padding:12px;">
+          <div style="font-size:12px;"><strong>Maddie AI:</strong> Closest feature to our F2 (NL explanation). VidMob launched Maddie in 2024 — NL explanation is <strong>no longer a unique differentiator alone</strong>. Must be combined with F1 + F3 to maintain edge.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ SLIDE 6: ARCHITECTURE -->
+<div class="slide">
+  <div class="slide-header">
+    <span class="kochava">Kochava</span>
+    <span class="slide-title">System Architecture</span>
+    <span class="slide-num">6 / 11</span>
+  </div>
+  <div class="slide-body" style="gap:16px;">
+    <div>
+      <div class="section-label">Architecture</div>
+      <div class="h1">End-to-end creative intelligence pipeline</div>
+    </div>
+
+    <!-- Ingestion layer -->
+    <div>
+      <div class="h3" style="margin-bottom:8px;color:var(--gray-400);font-size:12px;text-transform:uppercase;letter-spacing:1px;">Ingestion</div>
+      <div class="pipeline">
+        <div class="pipe-step">
+          <div class="pipe-step-title">Ad Networks</div>
+          <div class="pipe-step-sub">Meta · TikTok · Google · AppLovin · Unity · Mintegral</div>
+        </div>
+        <div class="pipe-step">
+          <div class="pipe-step-title">Airflow Cron + API Pull</div>
+          <div class="pipe-step-sub">Nightly delta ingestion</div>
+        </div>
+        <div class="pipe-step">
+          <div class="pipe-step-title">S3 Object Store</div>
+          <div class="pipe-step-sub">Images · Videos · Metadata</div>
+        </div>
+        <div class="pipe-step orange-pipe">
+          <div class="pipe-step-title">Kochava Attribution</div>
+          <div class="pipe-step-sub">Install · ROAS · LTV signals</div>
+        </div>
+        <div class="pipe-step">
+          <div class="pipe-step-title">Kafka Event Bus</div>
+          <div class="pipe-step-sub">creative.ingested</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Processing layer -->
+    <div>
+      <div class="h3" style="margin-bottom:8px;color:var(--gray-400);font-size:12px;text-transform:uppercase;letter-spacing:1px;">Processing (Temporal Durable Workflows)</div>
+      <div class="pipeline">
+        <div class="pipe-step">
+          <div class="pipe-step-title">pHash Dedup</div>
+          <div class="pipe-step-sub">Hamming ≤10 → flag variant</div>
+        </div>
+        <div class="pipe-step orange-pipe">
+          <div class="pipe-step-title">VLM Analysis</div>
+          <div class="pipe-step-sub">F1 Score · F2 Explanation<br>Claude Batch or Qwen LoRA</div>
+        </div>
+        <div class="pipe-step orange-pipe">
+          <div class="pipe-step-title">CV Annotation</div>
+          <div class="pipe-step-sub">F3 Bounding boxes<br>YOLOv11 + Grounding DINO</div>
+        </div>
+        <div class="pipe-step">
+          <div class="pipe-step-title">Fatigue Monitor</div>
+          <div class="pipe-step-sub">WoW CTR 20% decline → alert</div>
+        </div>
+        <div class="pipe-step">
+          <div class="pipe-step-title">Kafka Output</div>
+          <div class="pipe-step-sub">creative.scored</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Output layer -->
+    <div>
+      <div class="h3" style="margin-bottom:8px;color:var(--gray-400);font-size:12px;text-transform:uppercase;letter-spacing:1px;">Output</div>
+      <div class="pipeline">
+        <div class="pipe-step">
+          <div class="pipe-step-title">Dashboard</div>
+          <div class="pipe-step-sub">Scores · Annotations · KPIs · Fatigue alerts</div>
+        </div>
+        <div class="pipe-step">
+          <div class="pipe-step-title">REST API</div>
+          <div class="pipe-step-sub">Kochava platform integration</div>
+        </div>
+        <div class="pipe-step green" style="background:var(--green-light);border:1px solid #b2d8c4;">
+          <div class="pipe-step-title">Closed Loop L2</div>
+          <div class="pipe-step-sub">Recommendations + human approval</div>
+        </div>
+        <div class="pipe-step green" style="background:var(--green-light);border:1px solid #b2d8c4;">
+          <div class="pipe-step-title">Closed Loop L3</div>
+          <div class="pipe-step-sub">MAB auto-optimize + DSP bids</div>
+        </div>
+        <div class="pipe-step">
+          <div class="pipe-step-title">Training Data</div>
+          <div class="pipe-step-sub">→ 5K pairs → fine-tune trigger</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="background:var(--gray-100);">
+      <div style="display:flex;gap:32px;align-items:center;">
+        <div><span class="badge">Temporal</span> Durable workflows — survive partial failures, resume from last checkpoint (e.g. video analysis from frame 200)</div>
+        <div><span class="badge">Kafka</span> Event bus decouples ingestion from analysis — scales horizontally</div>
+        <div><span class="badge">pgvector</span> HNSW index — semantic creative similarity search in milliseconds</div>
+        <div><span class="badge">TimescaleDB</span> KPI time-series — hypertable partitioning for 12-mo rolling windows</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ SLIDE 7: AI STRATEGY -->
+<div class="slide">
+  <div class="slide-header">
+    <span class="kochava">Kochava</span>
+    <span class="slide-title">AI Strategy</span>
+    <span class="slide-num">7 / 11</span>
+  </div>
+  <div class="slide-body" style="gap:16px;">
+    <div>
+      <div class="section-label">Hybrid AI Strategy</div>
+      <div class="h1">Ship fast with Claude. Own the model long-term.</div>
+    </div>
+    <div class="two-col">
+      <div>
+        <table>
+          <thead>
+            <tr>
+              <th>Phase</th>
+              <th>Model</th>
+              <th>Cost / image</th>
+              <th>Cost at 10K/day</th>
+              <th>Latency</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="background:#e8f0fe;">
+              <td><strong>Phase 1</strong><br><span class="badge-blue" style="font-size:10px;">Now</span></td>
+              <td>Claude Sonnet 4.6<br>Batch API</td>
+              <td><strong>$0.0068</strong></td>
+              <td>$68/day</td>
+              <td>~5 min batch</td>
+            </tr>
+            <tr style="background:#e6f4ed;">
+              <td><strong>Phase 2</strong><br><span class="yes" style="font-size:10px;">5K examples</span></td>
+              <td>Qwen2.5-VL-7B<br>LoRA fine-tuned</td>
+              <td><strong>$0.0029</strong></td>
+              <td>$29/day</td>
+              <td>~2s per image</td>
+            </tr>
+            <tr>
+              <td colspan="5" style="background:var(--gray-100);font-size:12px;color:var(--gray-600);">57% cost reduction at scale · Fine-tune cost: ~$11/run on RunPod H100</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="card" style="margin-top:12px;background:var(--gray-100);">
+          <div class="h3">Annotation stack (Phase 1 + 2)</div>
+          <div style="margin-top:8px;font-size:13px;">
+            <strong>NOT the VLM</strong> — separate dedicated CV models, zero additional cost:<br>
+            <span style="display:block;margin-top:6px;">· YOLOv11 face detection — 200+ FPS, CPU-only, $0</span>
+            <span style="display:block;">· Grounding DINO — open-vocabulary text/CTA detection, 50ms, $0</span>
+            <span style="display:block;">· Tesseract OCR — text extraction, $0</span>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div class="card highlight">
+          <div class="h3">Data Flywheel</div>
+          <div style="font-size:13px;color:rgba(255,255,255,0.7);margin-top:8px;line-height:1.7;">
+            Every scored creative creates a labeled training pair:<br>
+            <strong style="color:var(--orange);">(creative → attribution outcome)</strong><br><br>
+            5,000 pairs → fine-tune trigger → Qwen2.5-VL LoRA<br>
+            Fine-tuned model scores <em>better</em> than base Claude because it learned from <em>actual installs and ROAS outcomes</em>, not generic visual features.<br><br>
+            <strong style="color:var(--orange);">Nobody else has this training signal.</strong> AppsFlyer and Singular don't fine-tune. VidMob doesn't fine-tune.
+          </div>
+        </div>
+        <div class="card">
+          <div class="h3">Multi-tenancy</div>
+          <div style="font-size:12px;color:var(--gray-600);margin-top:8px;">
+            Shared vLLM cluster + per-customer LoRA adapters (50–200 MB each).<br>
+            Hot-swap in 100ms. Customer A's model never sees Customer B's data.<br>
+            <span class="badge" style="margin-top:8px;display:inline-block;">Per-customer fine-tuning</span> at shared infrastructure cost.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ SLIDE 8: THE MOAT -->
+<div class="slide">
+  <div class="slide-header">
+    <span class="kochava">Kochava</span>
+    <span class="slide-title">The Competitive Moat</span>
+    <span class="slide-num">8 / 11</span>
+  </div>
+  <div class="slide-body" style="gap:16px;">
+    <div>
+      <div class="section-label">Defensible advantages</div>
+      <div class="h1">Two moats competitors cannot replicate</div>
+    </div>
+    <div class="two-col">
+      <div class="moat-box">
+        <div class="moat-num">01</div>
+        <div class="moat-title">Attribution-Trained Model</div>
+        <div class="moat-body">Every competitor scores creatives on visual features only — what they look like. Kochava trains on what actually happened: installs, ROAS, LTV. A model trained on 100M attribution events understands why ads convert, not just what they contain.</div>
+        <div class="moat-why">Why competitors can't copy this</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.7);margin-top:6px;">AppsFlyer and Singular are attribution platforms first — they own this data too. But they haven't built the fine-tuning loop, and they're not going to open-source their model. The race is on. <strong style="color:var(--orange);">First to 5K training pairs wins.</strong></div>
+      </div>
+      <div class="moat-box">
+        <div class="moat-num">02</div>
+        <div class="moat-title">On-Premise Deployment</div>
+        <div class="moat-body">Zero competitors offer true on-premise. AppsFlyer: SaaS only. Singular: private cloud add-on, not on-prem. VidMob, CreativeX, Segwise: all SaaS. Enterprise customers in gaming, fintech, and health verticals have strict data sovereignty requirements that SaaS cannot satisfy.</div>
+        <div class="moat-why">Why this matters for Kochava</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.7);margin-top:6px;">Kochava already has the on-premise story for attribution. Creative intelligence on-prem extends the same trust relationship. No creative data leaves the customer's environment. <strong style="color:var(--orange);">Enterprise-grade, compliance-first.</strong></div>
+      </div>
+    </div>
+    <div class="card">
+      <div style="display:flex;gap:24px;align-items:flex-start;">
+        <div style="flex:1;">
+          <div class="h3">What's no longer a moat</div>
+          <div style="font-size:13px;color:var(--gray-600);margin-top:8px;">NL explanation (F2) was unique in 2023. In 2025, VidMob's Maddie, Motion's Insights Hub, and Superads Copilot all launched NL explanation features. It's now table stakes, not differentiation. Our moat is F1 + F3 + attribution training + on-premise.</div>
+        </div>
+        <div style="flex:1;">
+          <div class="h3">Bounding boxes — still unique</div>
+          <div style="font-size:13px;color:var(--gray-600);margin-top:8px;">AppsFlyer's "AI Investigate" shows a <em>timeline</em> of feature appearances in video. That is not the same as drawing spatial bounding boxes on the actual creative asset. No competitor has F3 as we define it — YOLOv11 + Grounding DINO spatial overlay.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ SLIDE 9: TECH STACK -->
+<div class="slide">
+  <div class="slide-header">
+    <span class="kochava">Kochava</span>
+    <span class="slide-title">Production Tech Stack</span>
+    <span class="slide-num">9 / 11</span>
+  </div>
+  <div class="slide-body" style="gap:14px;">
+    <div>
+      <div class="section-label">Technology</div>
+      <div class="h1">Battle-tested components at every layer</div>
+    </div>
+    <div class="two-col">
+      <table>
+        <thead><tr><th>Layer</th><th>Component</th><th>Why chosen</th></tr></thead>
+        <tbody>
+          <tr><td><strong>API</strong></td><td>Python 3.11 · FastAPI</td><td>Async I/O, OpenAPI auto-docs, Pydantic models</td></tr>
+          <tr><td><strong>Orchestration</strong></td><td>Temporal</td><td>Durable workflows, auto-resume on failure</td></tr>
+          <tr><td><strong>Event bus</strong></td><td>Kafka (MSK/Confluent)</td><td>creative.ingested / creative.scored topics</td></tr>
+          <tr><td><strong>Primary DB</strong></td><td>PostgreSQL 15</td><td>Campaigns, creatives, analyses, annotations</td></tr>
+          <tr><td><strong>Time-series</strong></td><td>TimescaleDB</td><td>KPI metrics, hypertable partitioning</td></tr>
+          <tr><td><strong>Vector DB</strong></td><td>pgvector (HNSW)</td><td>Semantic creative similarity, embedding search</td></tr>
+          <tr><td><strong>Cache</strong></td><td>Redis</td><td>Provider state, score cache, rate limiting</td></tr>
+          <tr><td><strong>Object store</strong></td><td>S3 / MinIO</td><td>Creative assets, video keyframes</td></tr>
+        </tbody>
+      </table>
+      <table>
+        <thead><tr><th>Layer</th><th>Component</th><th>Why chosen</th></tr></thead>
+        <tbody>
+          <tr><td><strong>VLM Phase 1</strong></td><td>Claude Sonnet 4.6 Batch</td><td>$0.0068/image, Day 1 quality, no GPU needed</td></tr>
+          <tr><td><strong>VLM Phase 2</strong></td><td>Qwen2.5-VL-7B LoRA</td><td>$0.0029/image, attribution-fine-tuned, on-prem capable</td></tr>
+          <tr><td><strong>Inference</strong></td><td>vLLM (A100 cluster)</td><td>Per-customer LoRA adapters, 100ms hot-swap</td></tr>
+          <tr><td><strong>Face detect</strong></td><td>YOLOv11</td><td>200+ FPS, CPU-only, $0 OPEX</td></tr>
+          <tr><td><strong>Text/CTA detect</strong></td><td>Grounding DINO</td><td>Open-vocab, 50ms/image, $0 OPEX</td></tr>
+          <tr><td><strong>OCR</strong></td><td>Tesseract 5</td><td>On-premise, multilingual, $0</td></tr>
+          <tr><td><strong>Infra</strong></td><td>Kubernetes (EKS/GKE)</td><td>HPA autoscale, A100 GPU node pool</td></tr>
+          <tr><td><strong>Frontend</strong></td><td>React 18 · Next.js 14</td><td>SSR, Ant Design, real-time score dashboard</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card" style="background:var(--gray-100);">
+      <div class="info-row">
+        <div class="info-item"><div class="info-label">pHash threshold</div><div class="info-value">≤10 Hamming bits</div></div>
+        <div class="info-item"><div class="info-label">Fatigue threshold</div><div class="info-value">20% WoW CTR decline</div></div>
+        <div class="info-item"><div class="info-label">Analysis timeout</div><div class="info-value">60s / image</div></div>
+        <div class="info-item"><div class="info-label">Fine-tune trigger</div><div class="info-value">5,000 labeled pairs</div></div>
+        <div class="info-item"><div class="info-label">Fine-tune cost</div><div class="info-value">~$11 / run (H100)</div></div>
+        <div class="info-item"><div class="info-label">Cost savings at scale</div><div class="info-value">57% Phase 1→2</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ SLIDE 10: ROADMAP -->
+<div class="slide">
+  <div class="slide-header">
+    <span class="kochava">Kochava</span>
+    <span class="slide-title">Roadmap</span>
+    <span class="slide-num">10 / 11</span>
+  </div>
+  <div class="slide-body" style="gap:16px;">
+    <div>
+      <div class="section-label">Roadmap</div>
+      <div class="h1">4 phases. 12 months. Clear milestones.</div>
+    </div>
+    <div class="roadmap">
+      <div class="rm-phase current">
+        <div class="rm-q">Q2 2026 · NOW</div>
+        <div class="rm-name">Phase 1: MVP</div>
+        <div class="rm-item">F1 Score + F2 NL (Claude Batch API)</div>
+        <div class="rm-item">F3 Bounding boxes (YOLOv11 + DINO)</div>
+        <div class="rm-item">pHash deduplication</div>
+        <div class="rm-item">Fatigue detection (WoW CTR)</div>
+        <div class="rm-item">Campaign dashboard + creative grid</div>
+        <div class="rm-item">Provider switcher (Claude ↔ Ollama)</div>
+        <div class="rm-item" style="color:rgba(255,255,255,0.4);font-style:italic;">Demo: 50 creatives, Kochava seed data</div>
+      </div>
+      <div class="rm-phase">
+        <div class="rm-q">Q3 2026</div>
+        <div class="rm-name">Phase 2: Scale + Fine-tune</div>
+        <div class="rm-item">Airflow ingestion from ad network APIs</div>
+        <div class="rm-item">Kafka event bus deployment</div>
+        <div class="rm-item">Temporal workflow orchestration</div>
+        <div class="rm-item">Collect first 5K (creative → outcome) pairs</div>
+        <div class="rm-item">Trigger Qwen2.5-VL LoRA fine-tune</div>
+        <div class="rm-item">Cost: $29/day vs $68/day</div>
+        <div class="rm-item">Closed Loop Level 2 (recommendations)</div>
+      </div>
+      <div class="rm-phase">
+        <div class="rm-q">Q4 2026</div>
+        <div class="rm-name">Phase 3: Closed Loop</div>
+        <div class="rm-item">Thompson Sampling MAB</div>
+        <div class="rm-item">Auto creative allocation optimization</div>
+        <div class="rm-item">DSP bid adjustment signals</div>
+        <div class="rm-item">Per-customer LoRA adapters (100ms hot-swap)</div>
+        <div class="rm-item">pgvector HNSW semantic search</div>
+        <div class="rm-item">A/B test orchestration API</div>
+      </div>
+      <div class="rm-phase">
+        <div class="rm-q">Q1 2027</div>
+        <div class="rm-name">Phase 4: Enterprise / On-Prem</div>
+        <div class="rm-item">On-premise model deployment</div>
+        <div class="rm-item">Air-gapped customer environments</div>
+        <div class="rm-item">Enterprise data sovereignty compliance</div>
+        <div class="rm-item">White-label dashboard option</div>
+        <div class="rm-item">Kochava platform native integration</div>
+        <div class="rm-item">Benchmark percentile corpus (CVPR dataset)</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+      <div class="card green">
+        <div class="h3">MVP status: Built</div>
+        <div style="font-size:12px;color:var(--gray-600);margin-top:6px;">Working demo on M4 Pro. Claude + Ollama provider switching. 50 creative analysis complete. KPI dashboard seeded.</div>
+      </div>
+      <div class="card">
+        <div class="h3">Time to Phase 1 GA</div>
+        <div style="font-size:12px;color:var(--gray-600);margin-top:6px;">Kubernetes deployment + Kochava auth integration + production Postgres: ~4 weeks with 2 engineers.</div>
+      </div>
+      <div class="card">
+        <div class="h3">Fine-tune timeline</div>
+        <div style="font-size:12px;color:var(--gray-600);margin-top:6px;">5K pairs at 10K creatives/day = ~2 weeks data collection. Fine-tune run: 4 hours on H100. Model ready: Q3 2026.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ SLIDE 11: ASK -->
+<div class="slide">
+  <div class="slide-header">
+    <span class="kochava">Kochava</span>
+    <span class="slide-title">The Ask</span>
+    <span class="slide-num">11 / 11</span>
+  </div>
+  <div class="slide-body" style="gap:16px;">
+    <div>
+      <div class="section-label">Decision needed</div>
+      <div class="h1">What we need to move from demo to production</div>
+    </div>
+    <div class="col-60-40">
+      <div style="display:flex;flex-direction:column;gap:0;">
+        <div class="ask-item">
+          <div class="ask-icon">👥</div>
+          <div>
+            <div class="ask-title">Engineering Resources</div>
+            <div class="ask-body">2 backend engineers + 1 ML engineer for Q2–Q3 2026. Phase 1 GA: Kubernetes deploy, Kochava auth, production DB. Phase 2: Airflow ingestion, fine-tuning pipeline. Current MVP was built by 1 person in 1 week.</div>
+          </div>
+        </div>
+        <div class="ask-item">
+          <div class="ask-icon">🔑</div>
+          <div>
+            <div class="ask-title">API Budget</div>
+            <div class="ask-body">Claude Batch API: ~$2K/month at 10K creatives/day during Phase 1. This drops to ~$900/month after Phase 2 fine-tune. One-time fine-tune: ~$11/run on RunPod. Budget: $25K for first 6 months including GPU time.</div>
+          </div>
+        </div>
+        <div class="ask-item">
+          <div class="ask-icon">📊</div>
+          <div>
+            <div class="ask-title">Kochava Attribution Data Access</div>
+            <div class="ask-body">Need a data pipeline from Kochava Attribution → Creative Core Engine for the training signal. (creative_id, install_rate, ROAS, LTV) tuples per creative. This is the moat — nobody else can build it.</div>
+          </div>
+        </div>
+        <div class="ask-item">
+          <div class="ask-icon">🎯</div>
+          <div>
+            <div class="ask-title">Go-to-Market Decision</div>
+            <div class="ask-body">Three paths: (A) Kochava customers first — extend existing attribution relationships, fastest revenue. (B) Standalone SaaS — compete directly with Segwise/Motion, higher growth ceiling. (C) Enterprise on-prem — highest deal size, 6-9mo sales cycle. Recommend A first.</div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div class="card highlight">
+          <div class="h3">Why now</div>
+          <div style="font-size:13px;color:rgba(255,255,255,0.7);margin-top:8px;line-height:1.7;">
+            · AppsFlyer launched Creative Management Dec 2025<br>
+            · Singular updated Creative IQ Nov 2025<br>
+            · VidMob launched Maddie NL AI 2024<br><br>
+            The market is converging on AI creative intelligence. The window to lead is <strong style="color:var(--orange);">12–18 months</strong>. After that, AppsFlyer and Singular will close the gap with their own attribution-trained models.<br><br>
+            <strong style="color:var(--orange);">First-mover with attribution data wins.</strong>
+          </div>
+        </div>
+        <div class="card">
+          <div class="h3">What's already done</div>
+          <ul class="check-list" style="margin-top:8px;font-size:13px;">
+            <li>Working MVP (F1 + F2 + F3 + fatigue + dedup)</li>
+            <li>Claude + Ollama provider switching</li>
+            <li>React dashboard with creative grid + KPIs</li>
+            <li>Database schema + Alembic migrations</li>
+            <li>50-creative demo dataset ready</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<!-- Navigation -->
+<div class="nav" id="nav">
+  <button onclick="prev()" id="prevBtn" disabled>← Prev</button>
+  <div class="dots" id="dots"></div>
+  <span class="counter" id="counter">1 / 11</span>
+  <button onclick="next()" id="nextBtn">Next →</button>
+</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+  let current = 0;
+  const dotsEl = document.getElementById('dots');
+  const counter = document.getElementById('counter');
+
+  // Build dots
+  for (let i = 0; i < total; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === 0 ? ' active' : '');
+    d.onclick = () => goTo(i);
+    dotsEl.appendChild(d);
+  }
+
+  function goTo(n) {
+    slides[current].classList.remove('active');
+    dotsEl.children[current].classList.remove('active');
+    current = n;
+    slides[current].classList.add('active');
+    dotsEl.children[current].classList.add('active');
+    counter.textContent = (current + 1) + ' / ' + total;
+    document.getElementById('prevBtn').disabled = current === 0;
+    document.getElementById('nextBtn').disabled = current === total - 1;
+    window.scrollTo(0, 0);
+  }
+
+  function prev() { if (current > 0) goTo(current - 1); }
+  function next() { if (current < total - 1) goTo(current + 1); }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next();
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') prev();
+  });
+</script>
+</body>
+</html>
