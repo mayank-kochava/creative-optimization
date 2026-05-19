@@ -73,12 +73,12 @@ def copy_benchmark_image(output_path: Path, src: Path) -> tuple[int, int]:
     return width, height
 
 
-def compute_phash_signed(image_path: Path, index: int) -> int:
-    import hashlib
-    # Combine file content hash with index to guarantee uniqueness in seed data
-    content = image_path.read_bytes()
-    raw = int(hashlib.sha256(content + str(index).encode()).hexdigest()[:16], 16)
-    return ctypes.c_int64(raw).value
+def compute_phash_signed(image_path: Path) -> int:
+    import imagehash
+    from PIL import Image
+    h = imagehash.phash(Image.open(image_path).convert("RGB"), hash_size=8)
+    unsigned = int(str(h), 16)
+    return ctypes.c_int64(unsigned).value
 
 
 def generate_kpi_row(creative_id: int, day_offset: int, base_ctr: float, trend: str) -> dict:
@@ -118,10 +118,13 @@ async def main():
     storage_base = Path(os.environ.get("STORAGE_PATH", "/tmp/uploads"))
     benchmark_imgs = _benchmark_images()
     n_creatives = (50 // len(CAMPAIGNS)) * len(CAMPAIGNS)
-    selected_imgs = random.sample(benchmark_imgs, min(n_creatives, len(benchmark_imgs)))
-    # pad with random picks if pool smaller than creative count
-    while len(selected_imgs) < n_creatives:
+    # Pick 48 unique images, then repeat 2 to seed demo duplicate pairs
+    selected_imgs = random.sample(benchmark_imgs, min(n_creatives - 2, len(benchmark_imgs)))
+    while len(selected_imgs) < n_creatives - 2:
         selected_imgs.append(random.choice(benchmark_imgs))
+    # Insert 2 intentional duplicates (same image, different campaign)
+    selected_imgs.append(selected_imgs[4])   # duplicate of creative index 4
+    selected_imgs.append(selected_imgs[15])  # duplicate of creative index 15
 
     campaign_ids = []
     for name, tags in CAMPAIGNS:
@@ -146,7 +149,7 @@ async def main():
             src_img = selected_imgs[idx]
             width, height = copy_benchmark_image(storage_path, src_img)
             file_size = storage_path.stat().st_size
-            phash = compute_phash_signed(storage_path, idx)
+            phash = compute_phash_signed(storage_path)
 
             trend = "fatiguing" if fatiguing_assigned < 3 and j == 0 else "healthy"
             fatigue_status = "fatiguing" if trend == "fatiguing" else "insufficient_data"
@@ -181,23 +184,26 @@ async def main():
     )
     print(f"Inserted {len(metric_rows)} metric rows")
 
-    if len(creative_ids) >= 8:
-        await conn.execute(
-            """INSERT INTO duplicate_pairs (creative_id_a, creative_id_b, hamming_distance, duplicate_type)
-               VALUES ($1, $2, 0, 'self') ON CONFLICT DO NOTHING""",
-            creative_ids[0], creative_ids[1]
-        )
-        await conn.execute(
-            """INSERT INTO duplicate_pairs (creative_id_a, creative_id_b, hamming_distance, duplicate_type)
-               VALUES ($1, $2, 3, 'cross_platform') ON CONFLICT DO NOTHING""",
-            creative_ids[2], creative_ids[7]
-        )
-        await conn.execute(
-            """INSERT INTO duplicate_pairs (creative_id_a, creative_id_b, hamming_distance, duplicate_type)
-               VALUES ($1, $2, 1, 'self') ON CONFLICT DO NOTHING""",
-            creative_ids[4], creative_ids[5]
-        )
-    print("Created duplicate pairs")
+    # Detect duplicate pairs from the seeded creatives using real pHash comparison
+    PHASH_THRESHOLD = 10
+    rows = await conn.fetch("SELECT id, phash, campaign_id FROM creatives")
+    pairs_inserted = 0
+    seen_pairs: set[tuple[int, int]] = set()
+    for i, row_a in enumerate(rows):
+        for row_b in rows[i + 1:]:
+            dist = bin((row_a["phash"] ^ row_b["phash"]) & 0xFFFFFFFFFFFFFFFF).count("1")
+            if dist <= PHASH_THRESHOLD:
+                id_a, id_b = min(row_a["id"], row_b["id"]), max(row_a["id"], row_b["id"])
+                if (id_a, id_b) not in seen_pairs:
+                    seen_pairs.add((id_a, id_b))
+                    dup_type = "self" if row_a["campaign_id"] == row_b["campaign_id"] else "cross_platform"
+                    await conn.execute(
+                        """INSERT INTO duplicate_pairs (creative_id_a, creative_id_b, hamming_distance, duplicate_type)
+                           VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING""",
+                        id_a, id_b, dist, dup_type,
+                    )
+                    pairs_inserted += 1
+    print(f"Detected {pairs_inserted} duplicate pairs from seeded creatives")
 
     # Annotations: face/text/CTA bounding boxes in pixel space
     CTA_LABELS = ["DOWNLOAD NOW", "GET STARTED", "LEARN MORE", "TRY FREE", "SHOP NOW", "INSTALL FREE"]
