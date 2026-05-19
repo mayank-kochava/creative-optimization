@@ -5,7 +5,6 @@ import json
 import os
 import random
 import shutil
-import uuid
 from datetime import date, timedelta
 from pathlib import Path
 
@@ -31,6 +30,31 @@ CAMPAIGNS = [
     ("Ride Share Launch City", ["google", "instagram"]),
     ("Streaming App Premium", ["facebook", "google"]),
 ]
+
+# Realistic filename components
+_CAMPAIGN_SLUGS = {
+    "Summer Fitness App 2024": "fitness",
+    "Gaming App Launch Q3": "gaming",
+    "Travel Booking Promo": "travel",
+    "Food Delivery Rush": "foodapp",
+    "Finance App - Save Smart": "finapp",
+    "EdTech Back to School": "edtech",
+    "Beauty Brand Spring": "beauty",
+    "E-commerce Flash Sale": "ecomm",
+    "Ride Share Launch City": "rideshare",
+    "Streaming App Premium": "streaming",
+}
+_CONCEPTS = ["hero", "lifestyle", "product", "testimonial", "offer", "brand", "retarget", "awareness", "promo", "launch"]
+_SIZES = ["300x250", "728x90", "320x50", "160x600", "1080x1080", "1200x628", "stories", "feed"]
+_VARIANTS = ["v1", "v2", "v3", "a", "b", "c"]
+
+
+def _creative_filename(campaign_name: str, index: int) -> str:
+    slug = _CAMPAIGN_SLUGS.get(campaign_name, "ad")
+    concept = _CONCEPTS[index % len(_CONCEPTS)]
+    size = _SIZES[index % len(_SIZES)]
+    variant = _VARIANTS[index % len(_VARIANTS)]
+    return f"{slug}_{concept}_{size}_{variant}.jpg"
 
 
 def _benchmark_images() -> list[Path]:
@@ -93,6 +117,11 @@ async def main():
 
     storage_base = Path(os.environ.get("STORAGE_PATH", "/tmp/uploads"))
     benchmark_imgs = _benchmark_images()
+    n_creatives = (50 // len(CAMPAIGNS)) * len(CAMPAIGNS)
+    selected_imgs = random.sample(benchmark_imgs, min(n_creatives, len(benchmark_imgs)))
+    # pad with random picks if pool smaller than creative count
+    while len(selected_imgs) < n_creatives:
+        selected_imgs.append(random.choice(benchmark_imgs))
 
     campaign_ids = []
     for name, tags in CAMPAIGNS:
@@ -112,9 +141,9 @@ async def main():
         campaign_name = CAMPAIGNS[i][0]
         for j in range(creatives_per_campaign):
             idx = i * creatives_per_campaign + j
-            filename = f"creative_{uuid.uuid4().hex[:8]}.jpg"
+            filename = _creative_filename(CAMPAIGNS[i][0], j)
             storage_path = storage_base / str(campaign_id) / filename
-            src_img = benchmark_imgs[idx % len(benchmark_imgs)]
+            src_img = selected_imgs[idx]
             width, height = copy_benchmark_image(storage_path, src_img)
             file_size = storage_path.stat().st_size
             phash = compute_phash_signed(storage_path, idx)

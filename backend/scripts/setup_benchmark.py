@@ -14,7 +14,31 @@ BENCHMARK_DIR = Path(os.environ.get("BENCHMARK_PATH", "data/benchmark"))
 CORPUS_FILE = BENCHMARK_DIR / "corpus.json"
 CVPR_GCS_BASE = "https://storage.googleapis.com/ads-dataset/subfolder-{n}.zip"
 MAX_IMAGES_DEFAULT = 500
-CVPR_SUBFOLDERS = 5  # subfolders 0-4, ~100 images each = ~500 total
+CVPR_SUBFOLDERS = 1  # subfolder-0 has 5673 images — one zip is enough
+MAX_PER_SUBFOLDER = 500  # 500 shuffled picks from 5673 = plenty of variety
+
+
+def _filter_nsfw(directory: Path) -> None:
+    """Remove NSFW images from directory using nudenet classifier."""
+    try:
+        from nudenet import NudeClassifier
+        classifier = NudeClassifier()
+    except Exception:
+        print("  nudenet not available, skipping NSFW filter")
+        return
+    paths = list(directory.glob("*.jpg")) + list(directory.glob("*.jpeg")) + list(directory.glob("*.png"))
+    removed = 0
+    for path in paths:
+        try:
+            result = classifier.classify(str(path))
+            score = result.get(str(path), {}).get("unsafe", 0.0)
+            if score > 0.6:
+                path.unlink()
+                removed += 1
+        except Exception:
+            continue
+    if removed:
+        print(f"  Removed {removed} NSFW images")
 
 
 async def download_cvpr_subfolder(n: int, images_dir: Path, client: httpx.AsyncClient) -> int:
@@ -26,6 +50,7 @@ async def download_cvpr_subfolder(n: int, images_dir: Path, client: httpx.AsyncC
         count = len(list(dest.glob("*.jpg")))
         print(f"  subfolder-{n}: already downloaded ({count} images), skipping")
         return count
+    BENCHMARK_DIR.mkdir(parents=True, exist_ok=True)
     dest.mkdir(parents=True, exist_ok=True)
     print(f"  Downloading subfolder-{n}...", end=" ", flush=True)
     try:
@@ -37,13 +62,17 @@ async def download_cvpr_subfolder(n: int, images_dir: Path, client: httpx.AsyncC
                 async for chunk in resp.aiter_bytes(chunk_size=1024 * 1024):
                     f.write(chunk)
         with zipfile.ZipFile(zip_path) as zf:
+            import random as _rnd
             imgs = [nm for nm in zf.namelist() if nm.lower().endswith(('.jpg', '.jpeg', '.png'))]
+            _rnd.shuffle(imgs)
+            imgs = imgs[:MAX_PER_SUBFOLDER]
             for nm in imgs:
                 data = zf.read(nm)
                 (dest / Path(nm).name).write_bytes(data)
         zip_path.unlink(missing_ok=True)
+        _filter_nsfw(dest)
         count = len(list(dest.glob("*.jpg")))
-        print(f"{count} images")
+        print(f"{count} images (after NSFW filter)")
         return count
     except Exception as e:
         print(f"failed: {e}")

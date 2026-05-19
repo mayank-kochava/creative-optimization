@@ -1,4 +1,4 @@
-.PHONY: dev seed reset demo stop expand-data
+.PHONY: dev seed reset demo stop expand-data clean-data fresh
 
 # Start postgres, backend (hot-reload), and frontend dev server
 dev:
@@ -29,6 +29,16 @@ reset:
 demo: seed
 	@cd backend && PYTHONPATH=. uvicorn app.main:app --reload --port 8000 &
 	@cd frontend && npm run dev
+
+# Wipe all downloaded images, benchmark corpus, and uploaded creatives
+clean-data:
+	@pkill -f "setup_benchmark\|seed_data\|precompute_analysis" 2>/dev/null || true
+	rm -rf backend/data/benchmark/
+	rm -rf /tmp/uploads/
+	@echo "All image data cleared."
+
+# Full clean slate: wipe data + re-download benchmark + reseed + reanalyse (~10 min)
+fresh: clean-data expand-data seed
 
 # Stop background servers
 stop:

@@ -18,10 +18,10 @@ htmlcov/
 .env.*
 !.env.example
 
-# Data (uploads, benchmark images — too large for git)
-data/uploads/
-data/benchmark/images/
-data/seed/
+# Data (uploads, benchmark — generated, too large for git)
+**/data/uploads/
+**/data/benchmark/
+**/data/seed/
 
 # macOS
 .DS_Store
