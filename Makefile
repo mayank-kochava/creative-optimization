@@ -1,4 +1,4 @@
-.PHONY: dev seed reset demo stop
+.PHONY: dev seed reset demo stop expand-data
 
 # Start postgres, backend (hot-reload), and frontend dev server
 dev:
@@ -7,6 +7,10 @@ dev:
 	@sleep 3
 	@cd backend && PYTHONPATH=. uvicorn app.main:app --reload --port 8000 &
 	@cd frontend && npm run dev
+
+# Download more CVPR subfolders to expand image pool (run once, ~5 min, ~500 images)
+expand-data:
+	cd backend && PYTHONPATH=. python3.11 scripts/setup_benchmark.py --max-images 500
 
 # Full re-seed: wipe everything, new images from benchmark, new KPIs, then re-analyse (~3 min)
 seed:

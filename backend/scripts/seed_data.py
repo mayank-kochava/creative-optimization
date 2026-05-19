@@ -17,7 +17,7 @@ DATABASE_URL = os.environ.get(
     "postgresql://appuser:apppassword@localhost:5432/creative_opt"
 )
 
-BENCHMARK_DIR = Path(__file__).parent.parent / "data" / "benchmark" / "images" / "0"
+BENCHMARK_IMAGES_ROOT = Path(__file__).parent.parent / "data" / "benchmark" / "images"
 
 CAMPAIGNS = [
     ("Summer Fitness App 2024", ["facebook", "instagram"]),
@@ -34,9 +34,9 @@ CAMPAIGNS = [
 
 
 def _benchmark_images() -> list[Path]:
-    imgs = list(BENCHMARK_DIR.glob("*.jpg"))
+    imgs = list(BENCHMARK_IMAGES_ROOT.rglob("*.jpg"))
     if not imgs:
-        raise RuntimeError(f"No benchmark images found in {BENCHMARK_DIR}")
+        raise RuntimeError(f"No benchmark images found in {BENCHMARK_IMAGES_ROOT}")
     random.shuffle(imgs)
     return imgs
 

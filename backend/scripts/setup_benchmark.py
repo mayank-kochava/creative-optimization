@@ -12,37 +12,54 @@ from PIL import Image, ImageDraw
 
 BENCHMARK_DIR = Path(os.environ.get("BENCHMARK_PATH", "data/benchmark"))
 CORPUS_FILE = BENCHMARK_DIR / "corpus.json"
-CVPR_GCS_URL = "https://storage.googleapis.com/ads-dataset/subfolder-0.zip"
+CVPR_GCS_BASE = "https://storage.googleapis.com/ads-dataset/subfolder-{n}.zip"
 MAX_IMAGES_DEFAULT = 500
+CVPR_SUBFOLDERS = 5  # subfolders 0-4, ~100 images each = ~500 total
 
 
-async def download_cvpr_subset(max_images: int) -> list[int]:
-    """Download subfolder-0.zip from GCS and extract up to max_images images."""
-    print(f"Downloading CVPR 2017 Ads Dataset (subfolder-0)...")
-    BENCHMARK_DIR.mkdir(parents=True, exist_ok=True)
-    images_dir = BENCHMARK_DIR / "images"
-    images_dir.mkdir(exist_ok=True)
-    zip_path = BENCHMARK_DIR / "subfolder-0.zip"
-    async with httpx.AsyncClient(timeout=300) as client:
-        async with client.stream("GET", CVPR_GCS_URL) as resp:
+async def download_cvpr_subfolder(n: int, images_dir: Path, client: httpx.AsyncClient) -> int:
+    """Download one subfolder zip and extract images. Returns count extracted."""
+    url = CVPR_GCS_BASE.format(n=n)
+    zip_path = BENCHMARK_DIR / f"subfolder-{n}.zip"
+    dest = images_dir / str(n)
+    if dest.exists() and any(dest.glob("*.jpg")):
+        count = len(list(dest.glob("*.jpg")))
+        print(f"  subfolder-{n}: already downloaded ({count} images), skipping")
+        return count
+    dest.mkdir(parents=True, exist_ok=True)
+    print(f"  Downloading subfolder-{n}...", end=" ", flush=True)
+    try:
+        async with client.stream("GET", url) as resp:
             if resp.status_code != 200:
-                raise RuntimeError(f"Download failed: {resp.status_code}")
-            total = int(resp.headers.get("content-length", 0))
-            downloaded = 0
+                print(f"HTTP {resp.status_code}, skipping")
+                return 0
             with open(zip_path, "wb") as f:
                 async for chunk in resp.aiter_bytes(chunk_size=1024 * 1024):
                     f.write(chunk)
-                    downloaded += len(chunk)
-                    if total:
-                        pct = downloaded / total * 100
-                        print(f"\r  {pct:.1f}%", end="", flush=True)
-    print()
-    print("Extracting images...")
-    with zipfile.ZipFile(zip_path) as zf:
-        image_files = [n for n in zf.namelist() if n.lower().endswith(('.jpg', '.jpeg', '.png'))][:max_images]
-        for name in image_files:
-            zf.extract(name, images_dir)
-    zip_path.unlink()
+        with zipfile.ZipFile(zip_path) as zf:
+            imgs = [nm for nm in zf.namelist() if nm.lower().endswith(('.jpg', '.jpeg', '.png'))]
+            for nm in imgs:
+                data = zf.read(nm)
+                (dest / Path(nm).name).write_bytes(data)
+        zip_path.unlink(missing_ok=True)
+        count = len(list(dest.glob("*.jpg")))
+        print(f"{count} images")
+        return count
+    except Exception as e:
+        print(f"failed: {e}")
+        zip_path.unlink(missing_ok=True)
+        return 0
+
+
+async def download_cvpr_subset(max_images: int) -> list[int]:
+    """Download multiple CVPR subfolders until we have enough images."""
+    print(f"Downloading CVPR 2017 Ads Dataset (up to {CVPR_SUBFOLDERS} subfolders)...")
+    BENCHMARK_DIR.mkdir(parents=True, exist_ok=True)
+    images_dir = BENCHMARK_DIR / "images"
+    images_dir.mkdir(exist_ok=True)
+    async with httpx.AsyncClient(timeout=300) as client:
+        for n in range(CVPR_SUBFOLDERS):
+            await download_cvpr_subfolder(n, images_dir, client)
     return compute_phashes_for_dir(images_dir, max_images)
 
 
