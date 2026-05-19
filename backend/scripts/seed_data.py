@@ -34,15 +34,14 @@ CAMPAIGNS = [
 
 
 def _benchmark_images() -> list[Path]:
-    imgs = sorted(BENCHMARK_DIR.glob("*.jpg"))
+    imgs = list(BENCHMARK_DIR.glob("*.jpg"))
     if not imgs:
         raise RuntimeError(f"No benchmark images found in {BENCHMARK_DIR}")
+    random.shuffle(imgs)
     return imgs
 
 
-def copy_benchmark_image(output_path: Path, index: int) -> tuple[int, int]:
-    imgs = _benchmark_images()
-    src = imgs[index % len(imgs)]
+def copy_benchmark_image(output_path: Path, src: Path) -> tuple[int, int]:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(str(src), str(output_path))
     with Image.open(str(output_path)) as img:
@@ -93,6 +92,7 @@ async def main():
     )
 
     storage_base = Path(os.environ.get("STORAGE_PATH", "/tmp/uploads"))
+    benchmark_imgs = _benchmark_images()
 
     campaign_ids = []
     for name, tags in CAMPAIGNS:
@@ -112,9 +112,10 @@ async def main():
         campaign_name = CAMPAIGNS[i][0]
         for j in range(creatives_per_campaign):
             idx = i * creatives_per_campaign + j
-            filename = f"creative_{uuid.uuid4().hex[:8]}.jpg"  # .jpg matches benchmark source format
+            filename = f"creative_{uuid.uuid4().hex[:8]}.jpg"
             storage_path = storage_base / str(campaign_id) / filename
-            width, height = copy_benchmark_image(storage_path, idx)
+            src_img = benchmark_imgs[idx % len(benchmark_imgs)]
+            width, height = copy_benchmark_image(storage_path, src_img)
             file_size = storage_path.stat().st_size
             phash = compute_phash_signed(storage_path, idx)
 
@@ -174,7 +175,6 @@ async def main():
     TEXT_LABELS = ["Download Now", "Get Started Free", "Limited Time Offer", "Try for Free",
                    "50% OFF Today", "Join 1M+ Users", "See How It Works"]
     ann_rows = []
-    random.seed(7)
     for cid, phash, camp_id, trend in creative_phashes:
         row = await conn.fetchrow("SELECT width, height FROM creatives WHERE id = $1", cid)
         W, H = float(row["width"] or 400), float(row["height"] or 300)
