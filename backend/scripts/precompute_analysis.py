@@ -1,27 +1,26 @@
 """
-Pre-compute Ollama analysis for all seeded creatives.
-Run this the night before the demo — takes ~15 minutes for 50 images.
+Pre-compute analysis for all seeded creatives.
 
 Usage:
     cd backend
-    python scripts/precompute_analysis.py
+    PYTHONPATH=. python3.11 scripts/precompute_analysis.py           # analyse missing only
+    PYTHONPATH=. python3.11 scripts/precompute_analysis.py --reset   # truncate then re-analyse all
 """
 import asyncio
-import os
+import sys
 from pathlib import Path
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 
 from app.database import AsyncSessionLocal
 from app.models.analysis import CreativeAnalysis
 from app.models.annotation import CreativeAnnotation
 from app.models.creative import Creative
-from app.config import settings
 from app.services.provider_state import get_active_provider
 from app.services.annotation_pipeline import AnnotationPipeline
 
 
-async def main():
+async def main(reset: bool = False):
     provider = get_active_provider()
     print(f"Provider: {type(provider).__name__}")
     await provider.prewarm()
@@ -30,6 +29,11 @@ async def main():
     annotation_pipeline = AnnotationPipeline()
 
     async with AsyncSessionLocal() as db:
+        if reset:
+            print("Truncating existing analyses and annotations...")
+            await db.execute(text("TRUNCATE creative_analyses, creative_annotations RESTART IDENTITY"))
+            await db.commit()
+            print("Done.\n")
         result = await db.execute(
             select(Creative).where(
                 ~Creative.id.in_(
@@ -101,4 +105,4 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(main(reset="--reset" in sys.argv))
