@@ -280,4 +280,4 @@ async def get_creative_image(creative_id: int, db: AsyncSession = Depends(get_db
     path = Path(creative.storage_path)
     if not path.exists():
         raise HTTPException(status_code=404, detail="Image file not found")
-    return FileResponse(str(path))
+    return FileResponse(str(path), headers={"Cache-Control": "no-store"})
