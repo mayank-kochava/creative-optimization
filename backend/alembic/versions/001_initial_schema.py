@@ -43,8 +43,7 @@ def upgrade() -> None:
         sa.Column('updated_at', sa.TIMESTAMP(timezone=True), server_default=sa.text('now()'), nullable=False),
         sa.ForeignKeyConstraint(['campaign_id'], ['campaigns.id'], ondelete='CASCADE'),
         sa.PrimaryKeyConstraint('id'),
-        sa.UniqueConstraint('phash', name='uq_creatives_phash'),
-        sa.CheckConstraint("format IN ('jpg','png','webp','gif','mp4','mov')", name='ck_creative_format'),
+sa.CheckConstraint("format IN ('jpg','png','webp','gif','mp4','mov')", name='ck_creative_format'),
         sa.CheckConstraint("fatigue_status IN ('healthy','fatiguing','insufficient_data')", name='ck_fatigue_status'),
     )
     op.create_index('idx_creatives_campaign_id', 'creatives', ['campaign_id'])
