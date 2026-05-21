@@ -59,7 +59,11 @@ if [[ "$OS" == "debian" ]]; then
   sudo apt-get update -qq
 fi
 
-install_pkg tesseract
+if [[ "$OS" == "macos" ]]; then
+  install_pkg tesseract
+elif [[ "$OS" == "debian" ]]; then
+  install_pkg tesseract-ocr
+fi
 install_pkg ffmpeg
 
 # PostgreSQL client libs (needed for asyncpg on Linux)
@@ -99,7 +103,7 @@ fi
 success "Python: $($PYTHON --version)"
 
 # ── 5. Node.js 18+ ──────────────────────────────────────────────────────────
-if ! command -v node &>/dev/null || [[ $(node -e "process.exit(parseInt(process.versions.node)<18?1:0)" 2>&1; echo $?) -ne 0 ]]; then
+if ! command -v node &>/dev/null || ! node -e "if(parseInt(process.versions.node)<18)process.exit(1)" 2>/dev/null; then
   if [[ "$OS" == "macos" ]]; then
     info "Installing Node.js via Homebrew..."
     brew install node
@@ -209,12 +213,15 @@ fi
 info "Starting PostgreSQL..."
 docker-compose up -d postgres
 info "Waiting for PostgreSQL to be ready..."
+PG_READY=false
 for i in $(seq 1 20); do
   if docker-compose exec -T postgres pg_isready -U appuser -d creative_opt &>/dev/null; then
+    PG_READY=true
     break
   fi
   sleep 1
 done
+$PG_READY || die "PostgreSQL did not become ready in 20 seconds. Check: docker-compose logs postgres"
 success "PostgreSQL ready"
 
 # ── 12. Database migrations ───────────────────────────────────────────────────
