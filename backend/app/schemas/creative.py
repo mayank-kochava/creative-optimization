@@ -14,10 +14,20 @@ class CreativeSummary(BaseModel):
     format: str
     width: Optional[int] = None
     height: Optional[int] = None
+    duration_seconds: Optional[float] = None
     fatigue_status: Literal["healthy", "fatiguing", "insufficient_data"]
     overall_score: Optional[float] = None
     has_duplicate: bool = False
     created_at: datetime
+    # KPI fields (may be None if no metric data)
+    ctr: Optional[float] = None
+    ipm: Optional[float] = None
+    cost_total: Optional[float] = None
+    ctr_delta_wow: Optional[float] = None
+    days_active: Optional[int] = None
+    # Metadata
+    platform_tags: list[str] = []
+    search_tags: list[str] = []
 
     model_config = {"from_attributes": True}
 

@@ -24,6 +24,13 @@ export interface AnalysisScores {
   brand_consistency: number;
 }
 
+export interface Recommendation {
+  text: string;
+  metric: string | null;
+  lift_min: number | null;
+  lift_max: number | null;
+}
+
 export interface Analysis {
   scores: AnalysisScores;
   overall_score: number;
@@ -31,10 +38,11 @@ export interface Analysis {
   dominant_emotion: string;
   strengths: string[];
   weaknesses: string[];
-  recommendations: string[];
+  recommendations: Recommendation[];
   explanation: string;
   benchmark_percentile: number | null;
   status: 'complete' | 'degraded';
+  search_tags: string[];
 }
 
 export interface Annotation {
@@ -80,10 +88,18 @@ export interface CreativeSummary {
   format: string;
   width: number | null;
   height: number | null;
+  duration_seconds: number | null;
   fatigue_status: 'healthy' | 'fatiguing' | 'insufficient_data';
   overall_score: number | null;
   has_duplicate: boolean;
   created_at: string;
+  ctr: number | null;
+  ipm: number | null;
+  cost_total: number | null;
+  ctr_delta_wow: number | null;
+  days_active: number | null;
+  platform_tags: string[];
+  search_tags: string[];
 }
 
 export interface UploadResponse {
@@ -125,7 +141,7 @@ export const api = {
   createCampaign: (name: string, platform_tags: string[] = []): Promise<Campaign> =>
     client.post('/campaigns', { name, platform_tags }).then(r => r.data),
 
-  getCampaignCreatives: (id: number, skip = 0, limit = 20): Promise<CreativeSummary[]> =>
+  getCampaignCreatives: (id: number, skip = 0, limit = 200): Promise<CreativeSummary[]> =>
     client.get(`/campaigns/${id}/creatives`, { params: { skip, limit } }).then(r => r.data),
 
   uploadCreative: (campaignId: number, file: File): Promise<UploadResponse> => {

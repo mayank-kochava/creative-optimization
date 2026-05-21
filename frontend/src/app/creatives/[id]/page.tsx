@@ -176,11 +176,23 @@ export default function CreativeDetailPage({ params }: Props) {
                 <div className="ph">Recommendations</div>
                 <div className="pb">
                   <ul className="rec">
-                    {creative.analysis.recommendations.map((r: string, i: number) => (
-                      <li key={i}>
-                        <span className="rec-n">{i + 1}</span>{r}
-                      </li>
-                    ))}
+                    {creative.analysis.recommendations.map((r, i: number) => {
+                      const rec = typeof r === 'string' ? { text: r, metric: null, lift_min: null, lift_max: null } : r;
+                      return (
+                        <li key={i}>
+                          <span className="rec-n">{i + 1}</span>
+                          <span className="rec-body">
+                            {rec.text}
+                            {rec.metric && rec.lift_min != null && rec.lift_max != null && (
+                              <span className="rec-lift">
+                                est. +{rec.lift_min}–{rec.lift_max}%{' '}
+                                <span className="rec-metric">{rec.metric.toUpperCase()}</span>
+                              </span>
+                            )}
+                          </span>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               </div>

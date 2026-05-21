@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Literal, Optional
+from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -28,6 +28,20 @@ class AnalysisScores(BaseModel):
         return round(sum(vals) / len(vals), 1)
 
 
+class Recommendation(BaseModel):
+    text: str
+    metric: Optional[str] = None       # "ctr", "ipm", "cvr", "roas"
+    lift_min: Optional[int] = None     # estimated % improvement lower bound
+    lift_max: Optional[int] = None     # estimated % improvement upper bound
+
+    @model_validator(mode="before")
+    @classmethod
+    def coerce_string(cls, v: Any) -> Any:
+        if isinstance(v, str):
+            return {"text": v}
+        return v
+
+
 class OllamaAnalysisResponse(BaseModel):
     scores: AnalysisScores
     overall_score: float = 0.0
@@ -35,10 +49,22 @@ class OllamaAnalysisResponse(BaseModel):
     dominant_emotion: str
     strengths: list[str] = []
     weaknesses: list[str] = []
-    recommendations: list[str] = []
+    recommendations: list[Recommendation] = []
     explanation: str
+    search_tags: list[str] = []
     benchmark_percentile: Optional[int] = None
     status: Literal["complete", "degraded"] = "complete"
+
+    @field_validator("recommendations", mode="before")
+    @classmethod
+    def coerce_recommendations(cls, v: list) -> list:
+        result = []
+        for item in v:
+            if isinstance(item, str):
+                result.append({"text": item})
+            else:
+                result.append(item)
+        return result
 
     @model_validator(mode="after")
     def compute_overall_score(self) -> OllamaAnalysisResponse:
@@ -58,11 +84,11 @@ class DegradedAnalysisResponse(OllamaAnalysisResponse):
     scores: AnalysisScores = Field(default_factory=_zero_analysis_scores)
     persuasion_strategy: str = "unknown"
     dominant_emotion: str = "unknown"
-    recommendations: list[str] = Field(
+    recommendations: list[Recommendation] = Field(
         default_factory=lambda: [
-            "Retry analysis with a clearer image",
-            "Ensure Ollama is running and the model is loaded",
-            "Check image format and file integrity",
+            Recommendation(text="Retry analysis with a clearer image"),
+            Recommendation(text="Ensure Ollama is running and the model is loaded"),
+            Recommendation(text="Check image format and file integrity"),
         ]
     )
     explanation: str = "Analysis unavailable — Ollama did not return valid JSON."

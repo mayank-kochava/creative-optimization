@@ -101,6 +101,7 @@ async def get_creative_detail(
             explanation=a.explanation,
             benchmark_percentile=a.benchmark_percentile,
             status=a.status,
+            search_tags=a.search_tags or [],
         )
 
     # Build annotations

@@ -28,6 +28,7 @@ class CreativeAnalysis(Base):
     benchmark_percentile: Mapped[Optional[int]] = mapped_column(Integer)
     benchmark_corpus_size: Mapped[Optional[int]] = mapped_column(Integer)
     status: Mapped[str] = mapped_column(String(20), nullable=False, server_default="complete")
+    search_tags: Mapped[list] = mapped_column(JSONB, server_default="[]")
     analysed_at: Mapped[datetime] = mapped_column(server_default=func.now())
 
     creative: Mapped["Creative"] = relationship("Creative", back_populates="analysis")

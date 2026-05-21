@@ -9,11 +9,10 @@ export default function AppHeader() {
     <header className="hdr">
       <Link href="/" className="logo">
         <div className="logo-orb">✦</div>
-        Creative Intelligence
+        Kochava Creative Optimiser
       </Link>
       <nav className="hdr-nav">
-        <Link href="/" className={`nav-btn${path === '/' ? ' on' : ''}`}>Dashboard</Link>
-        <Link href="/campaigns" className={`nav-btn${path.startsWith('/campaigns') ? ' on' : ''}`}>Campaigns</Link>
+        <Link href="/" className={`nav-btn${path === '/' || path.startsWith('/campaigns') ? ' on' : ''}`}>Campaigns</Link>
         <Link href="/performance" className={`nav-btn${path === '/performance' ? ' on' : ''}`}>Performance</Link>
       </nav>
       <ProviderBadge />

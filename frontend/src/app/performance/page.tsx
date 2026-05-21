@@ -15,12 +15,6 @@ const FORMAT_GRADIENT: Record<string, string> = {
   gif: 'linear-gradient(135deg,#1a0a0a,#7f1d1d)',
 };
 
-const DURATIONS = [
-  { label: '3 months', value: '3mo' },
-  { label: '6 months', value: '6mo' },
-  { label: '1 year', value: '1yr' },
-];
-
 const TOP_N_OPTIONS = [4, 6, 8, 10];
 
 function ScoreBar({ score }: { score: number | null }) {
@@ -34,12 +28,28 @@ function ScoreBar({ score }: { score: number | null }) {
   );
 }
 
-type PerfCreative = CreativeSummary & { ctr?: number; campaign_name?: string };
+function DeltaBadge({ delta }: { delta: number | null }) {
+  if (delta === null) return null;
+  const pos = delta >= 0;
+  return (
+    <span className={`cr-delta ${pos ? 'cr-delta-pos' : 'cr-delta-neg'}`}>
+      {pos ? '▲' : '▼'}{Math.abs(delta)}%
+    </span>
+  );
+}
+
+function fmtCost(v: number | null) {
+  if (v === null || v === 0) return null;
+  return v >= 1000 ? `$${(v / 1000).toFixed(1)}k` : `$${v.toFixed(0)}`;
+}
+
+type PerfCreative = CreativeSummary & { campaign_name?: string };
 
 function PerfCard({ creative, cardCls }: { creative: PerfCreative; cardCls: string }) {
   const router = useRouter();
   const isVideo = ['mp4', 'mov'].includes(creative.format.toLowerCase());
   const grad = FORMAT_GRADIENT[creative.format.toLowerCase()] ?? FORMAT_GRADIENT.jpg;
+  const cost = fmtCost(creative.cost_total);
 
   return (
     <div className={`cr-card ${cardCls}`} onClick={() => router.push(`/creatives/${creative.id}`)}>
@@ -56,14 +66,9 @@ function PerfCard({ creative, cardCls }: { creative: PerfCreative; cardCls: stri
         )}
         <span className="cr-fmt-ov">{creative.format.toUpperCase()}</span>
         {creative.has_duplicate && <span className="cr-dup-ov">DUPE</span>}
-        {creative.ctr != null && (
-          <span style={{
-            position: 'absolute', bottom: 12, left: 12,
-            fontFamily: 'var(--font-m)', fontSize: 11, fontWeight: 700,
-            color: 'rgba(255,255,255,.9)', background: 'rgba(0,0,0,.55)',
-            padding: '3px 8px', borderRadius: 5, backdropFilter: 'blur(4px)',
-          }}>
-            CTR {creative.ctr.toFixed(2)}%
+        {isVideo && creative.duration_seconds != null && (
+          <span className="cr-dur-ov">
+            {Math.floor(creative.duration_seconds / 60)}:{String(Math.floor(creative.duration_seconds % 60)).padStart(2, '0')}
           </span>
         )}
       </div>
@@ -73,6 +78,37 @@ function PerfCard({ creative, cardCls }: { creative: PerfCreative; cardCls: stri
           <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: -4 }}>{creative.campaign_name}</div>
         )}
         <ScoreBar score={creative.overall_score} />
+
+        <div className="cr-metrics">
+          {creative.ipm != null && (
+            <div className="cr-mrow">
+              <span className="cr-ml">IPM</span>
+              <span className="cr-mv">{creative.ipm.toFixed(1)}</span>
+            </div>
+          )}
+          {creative.ctr != null && (
+            <div className="cr-mrow">
+              <span className="cr-ml">CTR</span>
+              <span className="cr-mv">
+                {creative.ctr.toFixed(1)}%
+                <DeltaBadge delta={creative.ctr_delta_wow} />
+              </span>
+            </div>
+          )}
+          {cost && (
+            <div className="cr-mrow">
+              <span className="cr-ml">Cost</span>
+              <span className="cr-mv">{cost}</span>
+            </div>
+          )}
+          {creative.days_active != null && (
+            <div className="cr-mrow">
+              <span className="cr-ml">Days</span>
+              <span className="cr-mv">{creative.days_active}</span>
+            </div>
+          )}
+        </div>
+
         <div className="cr-foot">
           <FatigueBadge status={creative.fatigue_status} />
         </div>
@@ -82,8 +118,10 @@ function PerfCard({ creative, cardCls }: { creative: PerfCreative; cardCls: stri
 }
 
 export default function PerformancePage() {
-  const [duration, setDuration] = useState('3mo');
   const [topN, setTopN] = useState(6);
+  const [searchQ, setSearchQ] = useState('');
+  const [formatFilter, setFormatFilter] = useState<'all' | 'image' | 'video'>('all');
+  const [fatigueFilter, setFatigueFilter] = useState<'all' | 'fatiguing'>('all');
 
   const { data: campaigns } = useSWR('campaigns', api.getCampaigns);
   const campaignIds = campaigns?.map(c => c.id) ?? [];
@@ -105,49 +143,104 @@ export default function PerformancePage() {
     }
   );
 
+  const isVideo = (fmt: string) => ['mp4', 'mov'].includes(fmt.toLowerCase());
+
+  const filtered = useMemo(() => {
+    if (!allCreatives) return [];
+    let list = allCreatives as PerfCreative[];
+
+    if (formatFilter === 'video') list = list.filter(c => isVideo(c.format));
+    else if (formatFilter === 'image') list = list.filter(c => !isVideo(c.format));
+
+    if (fatigueFilter === 'fatiguing') list = list.filter(c => c.fatigue_status === 'fatiguing');
+
+    if (searchQ.trim()) {
+      const words = searchQ.toLowerCase().trim().split(/\s+/).filter(Boolean);
+      list = list.filter(c => {
+        const haystack = [
+          ...(c.search_tags ?? []),
+          c.filename,
+          c.campaign_name ?? '',
+        ].join(' ').toLowerCase();
+        return words.every(w => haystack.includes(w));
+      });
+    }
+
+    return list;
+  }, [allCreatives, searchQ, formatFilter, fatigueFilter]);
+
   const { topCreatives, botCreatives } = useMemo(() => {
-    if (!allCreatives) return { topCreatives: [], botCreatives: [] };
-    const sorted = [...allCreatives].sort((a, b) =>
-      ((b as PerfCreative).ctr ?? b.overall_score ?? 0) - ((a as PerfCreative).ctr ?? a.overall_score ?? 0)
+    const sorted = [...filtered].sort((a, b) =>
+      (b.ctr ?? b.overall_score ?? 0) - (a.ctr ?? a.overall_score ?? 0)
     );
     return {
       topCreatives: sorted.slice(0, topN),
       botCreatives: sorted.slice(-topN).reverse(),
     };
-  }, [allCreatives, topN]);
+  }, [filtered, topN]);
 
   return (
     <div className="page">
       <div className="pg-hdr">
         <div>
           <div className="pg-title">Performance</div>
-          <div className="pg-sub">Compare top and bottom performing creatives across your portfolio</div>
+          <div className="pg-sub">Top and bottom performing creatives across your portfolio</div>
         </div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', gap: 4, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r)', padding: 3, boxShadow: 'var(--shadow)' }}>
-          {DURATIONS.map(d => (
+      {/* Search + filters */}
+      <div className="cr-search-wrap">
+        <div className="cr-search">
+          <svg className="cr-search-icon" viewBox="0 0 20 20" fill="none">
+            <circle cx="8.5" cy="8.5" r="5.5" stroke="currentColor" strokeWidth="1.6"/>
+            <path d="M13.5 13.5L17 17" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+          </svg>
+          <input
+            className="cr-search-input"
+            placeholder="AI search — e.g. 'red background', 'outdoor scene', 'male character'…"
+            value={searchQ}
+            onChange={e => setSearchQ(e.target.value)}
+          />
+          {searchQ && (
+            <button className="cr-search-clear" onClick={() => setSearchQ('')}>✕</button>
+          )}
+        </div>
+        <div className="cr-filter-row">
+          <span className="cr-filter-label">Format</span>
+          {(['all', 'image', 'video'] as const).map(f => (
             <button
-              key={d.value}
-              className={`dur-btn${duration === d.value ? ' active' : ''}`}
-              onClick={() => setDuration(d.value)}
+              key={f}
+              className={`cr-filter-btn${formatFilter === f ? ' active' : ''}`}
+              onClick={() => setFormatFilter(f)}
             >
-              {d.label}
+              {f.charAt(0).toUpperCase() + f.slice(1)}
             </button>
           ))}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-2)' }}>
-          Show top/bottom
+          <span className="cr-filter-sep" />
+          <span className="cr-filter-label">Status</span>
+          <button
+            className={`cr-filter-btn${fatigueFilter === 'all' ? ' active' : ''}`}
+            onClick={() => setFatigueFilter('all')}
+          >All</button>
+          <button
+            className={`cr-filter-btn cr-filter-btn-warn${fatigueFilter === 'fatiguing' ? ' active' : ''}`}
+            onClick={() => setFatigueFilter(fatigueFilter === 'fatiguing' ? 'all' : 'fatiguing')}
+          >Fatiguing</button>
+          <span className="cr-filter-sep" />
+          <span className="cr-filter-label">Show top/bottom</span>
           <select
             value={topN}
             onChange={e => setTopN(Number(e.target.value))}
-            style={{ border: '1px solid var(--border)', borderRadius: 'var(--r)', padding: '5px 10px', fontSize: 13, background: 'var(--surface)', color: 'var(--text)', cursor: 'pointer' }}
+            style={{ border: '1px solid var(--border)', borderRadius: 'var(--r)', padding: '4px 10px', fontSize: 12, background: 'var(--surface)', color: 'var(--text)', cursor: 'pointer' }}
           >
             {TOP_N_OPTIONS.map(n => <option key={n} value={n}>{n}</option>)}
           </select>
-          creatives
         </div>
+        {searchQ && (
+          <div className="cr-search-count">
+            {filtered.length} result{filtered.length !== 1 ? 's' : ''} for &ldquo;{searchQ}&rdquo;
+          </div>
+        )}
       </div>
 
       <div style={{ marginBottom: 32 }}>
@@ -159,7 +252,7 @@ export default function PerformancePage() {
           <div className="spin-wrap"><div className="spin" /></div>
         ) : (
           <div className="cr-grid">
-            {topCreatives.map(c => <PerfCard key={c.id} creative={c as PerfCreative} cardCls="top-card" />)}
+            {topCreatives.map(c => <PerfCard key={c.id} creative={c} cardCls="top-card" />)}
           </div>
         )}
       </div>
@@ -173,7 +266,7 @@ export default function PerformancePage() {
           <div className="spin-wrap"><div className="spin" /></div>
         ) : (
           <div className="cr-grid">
-            {botCreatives.map(c => <PerfCard key={c.id} creative={c as PerfCreative} cardCls="bot-card" />)}
+            {botCreatives.map(c => <PerfCard key={c.id} creative={c} cardCls="bot-card" />)}
           </div>
         )}
       </div>

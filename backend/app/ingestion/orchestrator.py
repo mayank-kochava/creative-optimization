@@ -162,10 +162,11 @@ class CreativeIngestionOrchestrator:
                     dominant_emotion=result.dominant_emotion,
                     strengths=result.strengths,
                     weaknesses=result.weaknesses,
-                    recommendations=result.recommendations,
+                    recommendations=[r.model_dump() for r in result.recommendations],
                     explanation=result.explanation,
                     benchmark_percentile=benchmark_percentile,
                     status=result.status,
+                    search_tags=result.search_tags,
                 )
                 db.add(analysis)
 

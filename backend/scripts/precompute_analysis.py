@@ -78,9 +78,10 @@ async def main(reset: bool = False):
                     dominant_emotion=result_analysis.dominant_emotion,
                     strengths=result_analysis.strengths,
                     weaknesses=result_analysis.weaknesses,
-                    recommendations=result_analysis.recommendations,
+                    recommendations=[r.model_dump() for r in result_analysis.recommendations],
                     explanation=result_analysis.explanation,
                     status=result_analysis.status,
+                    search_tags=result_analysis.search_tags,
                 )
                 db.add(analysis)
 

@@ -4,7 +4,7 @@ import AntdProviders from './AntdProviders';
 import AppHeader from './AppHeader';
 
 export const metadata: Metadata = {
-  title: 'Creative Intelligence Platform',
+  title: 'Kochava Creative Optimiser',
   description: 'AI-powered ad creative analysis',
 };
 
