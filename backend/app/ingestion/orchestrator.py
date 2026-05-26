@@ -1,10 +1,13 @@
 import asyncio
+import logging
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
 
 from fastapi import HTTPException, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
+
+logger = logging.getLogger(__name__)
 
 from app.config import settings
 from app.models.analysis import CreativeAnalysis
@@ -155,12 +158,14 @@ class CreativeIngestionOrchestrator:
             raise HTTPException(status_code=500, detail=str(e)) from e
 
     async def _run_analysis(self, creative_id: int, path: Path, ext: str) -> None:
+        logger.info("Analysis started — creative_id=%d ext=%s", creative_id, ext)
         try:
             from app.database import AsyncSessionLocal
             async with AsyncSessionLocal() as db:
                 if ext in VIDEO_FORMATS:
                     meta = self.video_service.validate_video(path)
                     keyframes = await self.video_service.extract_keyframes(path, meta.duration_seconds)
+                    logger.info("Extracted %d keyframes for creative_id=%d", len(keyframes), creative_id)
                     result = await self.analysis_provider.analyse_video_keyframes(keyframes)
                     for kf in keyframes:
                         kf.unlink(missing_ok=True)

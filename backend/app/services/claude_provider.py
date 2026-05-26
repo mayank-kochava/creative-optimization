@@ -6,7 +6,11 @@ from pathlib import Path
 from pydantic import ValidationError
 
 from app.schemas.analysis import AnalysisScores, DegradedAnalysisResponse, OllamaAnalysisResponse
-from app.services.prompts import IMAGE_ANALYSIS_PROMPT
+import logging
+
+from app.services.prompts import IMAGE_ANALYSIS_PROMPT, VIDEO_ANALYSIS_PROMPT
+
+logger = logging.getLogger(__name__)
 
 
 CLAUDE_MODEL = "claude-sonnet-4-6"
@@ -84,38 +88,52 @@ class ClaudeProvider:
         if not paths:
             return DegradedAnalysisResponse()
 
-        results = []
-        for path in paths:
-            result = await self.analyse_image(path)
-            if result.status == "complete":
-                results.append(result)
+        logger.info("Analysing video: %d keyframes", len(paths))
 
-        if not results:
+        content: list[dict] = []
+        for i, path in enumerate(paths):
+            try:
+                raw_bytes = path.read_bytes()
+            except (FileNotFoundError, PermissionError, OSError):
+                continue
+            b64 = base64.standard_b64encode(raw_bytes).decode("utf-8")
+            content.append({"type": "text", "text": f"Keyframe {i + 1} of {len(paths)}:"})
+            content.append({
+                "type": "image",
+                "source": {"type": "base64", "media_type": "image/jpeg", "data": b64},
+            })
+
+        if not content:
             return DegradedAnalysisResponse()
 
-        score_fields = [
-            "hook_strength", "cta_clarity", "visual_quality", "message_clarity",
-            "emotional_resonance", "social_proof", "brand_consistency",
-        ]
-        averaged_scores = {}
-        for field in score_fields:
+        content.append({"type": "text", "text": VIDEO_ANALYSIS_PROMPT})
+
+        for attempt in range(3):
             try:
-                averaged_scores[field] = round(
-                    sum(getattr(r.scores, field) for r in results) / len(results), 1
+                logger.info("Claude video analysis attempt %d", attempt + 1)
+                message = await asyncio.to_thread(
+                    self._client.messages.create,
+                    model=CLAUDE_MODEL,
+                    max_tokens=1024,
+                    system=_SYSTEM,
+                    messages=[{"role": "user", "content": content}],
                 )
-            except (AttributeError, ZeroDivisionError):
-                averaged_scores[field] = 0
+                raw = message.content[0].text.strip()
+                if raw.startswith("```"):
+                    raw = raw.split("\n", 1)[1].rsplit("```", 1)[0].strip()
+                data = json.loads(raw)
+                result = OllamaAnalysisResponse(**data)
+                logger.info("Video analysis complete — overall score: %s", result.overall_score)
+                return result
+            except (json.JSONDecodeError, ValidationError, KeyError, IndexError) as e:
+                logger.warning("Video analysis parse error attempt %d: %s", attempt + 1, e)
+                await asyncio.sleep(2 ** attempt)
+                if attempt == 2:
+                    return DegradedAnalysisResponse()
+            except Exception as e:
+                logger.warning("Video analysis error attempt %d: %s", attempt + 1, e)
+                await asyncio.sleep(2 ** attempt)
+                if attempt == 2:
+                    return DegradedAnalysisResponse()
 
-        best = max(results, key=lambda r: r.overall_score)
-        merged_scores = AnalysisScores(**averaged_scores)
-
-        return OllamaAnalysisResponse(
-            scores=merged_scores,
-            overall_score=merged_scores.average(),
-            persuasion_strategy=best.persuasion_strategy,
-            dominant_emotion=best.dominant_emotion,
-            strengths=best.strengths,
-            weaknesses=best.weaknesses,
-            recommendations=best.recommendations,
-            explanation=f"(Video analysis across {len(results)} keyframes) {best.explanation}",
-        )
+        return DegradedAnalysisResponse()

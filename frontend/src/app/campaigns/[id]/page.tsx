@@ -183,14 +183,13 @@ export default function CampaignPage({ params }: Props) {
                     className="cr-thumb"
                     style={{ background: FORMAT_GRADIENT[c.format.toLowerCase()] ?? FORMAT_GRADIENT.jpg }}
                   >
-                    {!isVideo(c.format) ? (
-                      <img
-                        src={`/api/creatives/${c.id}/image`}
-                        alt={c.filename}
-                        className="cr-thumb-img"
-                        onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                      />
-                    ) : (
+                    <img
+                      src={`/api/creatives/${c.id}/thumbnail`}
+                      alt={c.filename}
+                      className="cr-thumb-img"
+                      onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                    />
+                    {isVideo(c.format) && (
                       <div className="cr-play">▶</div>
                     )}
                     <span className="cr-fmt-ov">{c.format.toUpperCase()}</span>

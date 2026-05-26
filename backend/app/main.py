@@ -1,7 +1,13 @@
+import logging
 from contextlib import asynccontextmanager
 
 import httpx
 from fastapi import FastAPI
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(name)s %(levelname)s %(message)s",
+)
 
 from app.config import settings
 from app.routers import health, campaigns, creatives

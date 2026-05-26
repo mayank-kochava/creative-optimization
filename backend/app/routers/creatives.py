@@ -272,6 +272,29 @@ async def reanalyse_creative(creative_id: int, db: AsyncSession = Depends(get_db
     return {"status": "queued", "creative_id": creative_id}
 
 
+@router.get("/creatives/{creative_id}/thumbnail")
+async def get_creative_thumbnail(creative_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Creative).where(Creative.id == creative_id))
+    creative = result.scalar_one_or_none()
+    if not creative:
+        raise HTTPException(status_code=404, detail="Creative not found")
+    storage_path = Path(creative.storage_path)
+    if creative.format in ("jpg", "jpeg", "png", "webp", "gif"):
+        if not storage_path.exists():
+            raise HTTPException(status_code=404, detail="File not found")
+        return FileResponse(str(storage_path), headers={"Cache-Control": "max-age=86400"})
+    thumb_path = storage_path.with_suffix(".thumb.jpg")
+    if not thumb_path.exists():
+        if not storage_path.exists():
+            raise HTTPException(status_code=404, detail="Video file not found")
+        import shutil
+        frame = await _video_service._extract_frame(storage_path, 0.0)
+        if not frame.exists():
+            raise HTTPException(status_code=500, detail="Could not extract thumbnail")
+        shutil.move(str(frame), str(thumb_path))
+    return FileResponse(str(thumb_path), headers={"Cache-Control": "max-age=86400"})
+
+
 @router.get("/creatives/{creative_id}/image")
 async def get_creative_image(creative_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Creative).where(Creative.id == creative_id))

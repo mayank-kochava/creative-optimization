@@ -48,7 +48,8 @@ export default function CreativeDetailPage({ params }: Props) {
     return <div className="spin-wrap"><div className="spin" /></div>;
   }
 
-  const imageUrl = `/api/creatives/${creativeId}/image`;
+  const mediaUrl = `/api/creatives/${creativeId}/image`;
+  const isVideo = ['mp4', 'mov'].includes(creative.format.toLowerCase());
   const score = creative.analysis?.overall_score ?? null;
 
   return (
@@ -82,20 +83,30 @@ export default function CreativeDetailPage({ params }: Props) {
           <div className="panel">
             <div className="ph">
               Creative Preview
-              <span className="ann-legend">
-                <span><i style={{ border: '2px solid #1677FF' }} />Face</span>
-                <span><i style={{ border: '2px solid #27AE60' }} />Text</span>
-                <span><i style={{ border: '2px solid #C0392B' }} />CTA</span>
-              </span>
+              {!isVideo && (
+                <span className="ann-legend">
+                  <span><i style={{ border: '2px solid #1677FF' }} />Face</span>
+                  <span><i style={{ border: '2px solid #27AE60' }} />Text</span>
+                  <span><i style={{ border: '2px solid #C0392B' }} />CTA</span>
+                </span>
+              )}
             </div>
             <div className="pb" style={{ padding: 14 }}>
               <div className="img-wrap">
-                <AnnotatedImage
-                  imageUrl={imageUrl}
-                  annotations={creative.annotations}
-                  width={creative.width ?? 400}
-                  height={creative.height ?? 300}
-                />
+                {isVideo ? (
+                  <video
+                    src={mediaUrl}
+                    controls
+                    style={{ width: '100%', borderRadius: 6, display: 'block' }}
+                  />
+                ) : (
+                  <AnnotatedImage
+                    imageUrl={mediaUrl}
+                    annotations={creative.annotations}
+                    width={creative.width ?? 400}
+                    height={creative.height ?? 300}
+                  />
+                )}
               </div>
             </div>
           </div>
