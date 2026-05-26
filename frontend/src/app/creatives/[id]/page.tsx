@@ -56,7 +56,7 @@ export default function CreativeDetailPage({ params }: Props) {
       <div className="bc">
         <span className="bc-link" onClick={() => router.push('/')}>Dashboard</span>
         <span className="bc-sep">/</span>
-        <span className="bc-link" onClick={() => router.back()}>Campaign</span>
+        <span className="bc-link" onClick={() => router.push(`/campaigns/${creative.campaign_id}`)}>Campaign</span>
         <span className="bc-sep">/</span>
         <span style={{ color: 'var(--text)' }}>{creative.filename}</span>
       </div>
