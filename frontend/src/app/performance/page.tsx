@@ -171,7 +171,7 @@ export default function PerformancePage() {
 
   const { topCreatives, botCreatives } = useMemo(() => {
     const sorted = [...filtered].sort((a, b) =>
-      (b.ctr ?? b.overall_score ?? 0) - (a.ctr ?? a.overall_score ?? 0)
+      (b.overall_score ?? -1) - (a.overall_score ?? -1)
     );
     return {
       topCreatives: sorted.slice(0, topN),
