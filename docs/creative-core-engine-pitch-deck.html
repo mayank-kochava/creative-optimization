@@ -937,13 +937,9 @@
 
   function scaleToFit() {
     const deck = document.getElementById('deck');
-    const navH = 60;
-    const availW = window.innerWidth;
-    const availH = window.innerHeight - navH;
-    const scale = Math.min(availW / DESIGN_W, availH / DESIGN_H);
-    const leftOffset = Math.max(0, (availW - DESIGN_W * scale) / 2);
+    const scale = window.innerWidth / DESIGN_W;
     deck.style.transform = `scale(${scale})`;
-    deck.style.left = leftOffset + 'px';
+    deck.style.left = '0';
   }
 
   scaleToFit();
