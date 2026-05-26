@@ -108,6 +108,29 @@ class CreativeIngestionOrchestrator:
                 other_id = (duplicate_pair.creative_id_b
                             if duplicate_pair.creative_id_a == creative.id
                             else duplicate_pair.creative_id_a)
+
+                from sqlalchemy import select as _sa_select
+                orig_result = await self.db.execute(
+                    _sa_select(CreativeAnalysis).where(CreativeAnalysis.creative_id == other_id)
+                )
+                orig_analysis = orig_result.scalar_one_or_none()
+                if orig_analysis:
+                    self.db.add(CreativeAnalysis(
+                        creative_id=creative.id,
+                        scores=orig_analysis.scores,
+                        overall_score=orig_analysis.overall_score,
+                        persuasion_strategy=orig_analysis.persuasion_strategy,
+                        dominant_emotion=orig_analysis.dominant_emotion,
+                        strengths=orig_analysis.strengths,
+                        weaknesses=orig_analysis.weaknesses,
+                        recommendations=orig_analysis.recommendations,
+                        explanation=orig_analysis.explanation,
+                        benchmark_percentile=orig_analysis.benchmark_percentile,
+                        status=orig_analysis.status,
+                        search_tags=orig_analysis.search_tags,
+                    ))
+                    await self.db.commit()
+
                 return IngestionResult(
                     creative_id=creative.id,
                     duplicate_detected=True,

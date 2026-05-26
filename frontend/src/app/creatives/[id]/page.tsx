@@ -24,14 +24,20 @@ export default function CreativeDetailPage({ params }: Props) {
   const router = useRouter();
   const creativeId = Number(params.id);
 
-  const { data: creative, isLoading } = useSWR(
-    `creative-${creativeId}`,
-    () => api.getCreative(creativeId),
-    { refreshInterval: (data) => (!data?.analysis || data.analysis.status === 'degraded' ? 5000 : 0) }
-  );
   const { data: duplicates = [] } = useSWR(
     `creative-${creativeId}-duplicates`,
     () => api.getDuplicates(creativeId)
+  );
+  const { data: creative, isLoading } = useSWR(
+    `creative-${creativeId}`,
+    () => api.getCreative(creativeId),
+    {
+      refreshInterval: (data) => {
+        if (data?.analysis && data.analysis.status !== 'degraded') return 0;
+        if (duplicates.length > 0) return 0;
+        return 5000;
+      },
+    }
   );
   const { data: fatigueData } = useSWR(
     `creative-${creativeId}-fatigue`,
@@ -97,7 +103,22 @@ export default function CreativeDetailPage({ params }: Props) {
 
         {/* Right: score + analysis */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {!creative.analysis || creative.analysis.status === 'degraded' ? (
+          {!creative.analysis && duplicates.length > 0 ? (
+            <div className="panel">
+              <div className="pb" style={{ textAlign: 'center', padding: 40 }}>
+                <div style={{ color: 'var(--text-2)', fontSize: 13 }}>
+                  Duplicate creative — view{' '}
+                  <span
+                    style={{ color: 'var(--accent)', cursor: 'pointer', textDecoration: 'underline' }}
+                    onClick={() => router.push(`/creatives/${duplicates[0].duplicate_id}`)}
+                  >
+                    original #{duplicates[0].duplicate_id}
+                  </span>
+                  {' '}for analysis.
+                </div>
+              </div>
+            </div>
+          ) : !creative.analysis || creative.analysis.status === 'degraded' ? (
             <div className="panel">
               <div className="pb" style={{ textAlign: 'center', padding: 40 }}>
                 <div className="spin" style={{ margin: '0 auto 12px' }} />
