@@ -30,9 +30,11 @@ class ClaudeProvider:
         pass  # Claude API has no cold start
 
     async def analyse_image(self, path: Path) -> OllamaAnalysisResponse | DegradedAnalysisResponse:
+        logger.info("Image analysis started — %s", path.name)
         try:
             raw_bytes = path.read_bytes()
         except (FileNotFoundError, PermissionError, OSError):
+            logger.warning("Image not readable: %s", path)
             return DegradedAnalysisResponse()
 
         suffix = path.suffix.lower().lstrip(".")
@@ -45,6 +47,7 @@ class ClaudeProvider:
 
         for attempt in range(3):
             try:
+                logger.info("Claude image analysis attempt %d — %s", attempt + 1, path.name)
                 message = await asyncio.to_thread(
                     self._client.messages.create,
                     model=CLAUDE_MODEL,
@@ -68,16 +71,19 @@ class ClaudeProvider:
                     ],
                 )
                 raw = message.content[0].text.strip()
-                # Strip markdown fences if present
                 if raw.startswith("```"):
                     raw = raw.split("\n", 1)[1].rsplit("```", 1)[0].strip()
                 data = json.loads(raw)
-                return OllamaAnalysisResponse(**data)
-            except (json.JSONDecodeError, ValidationError, KeyError, IndexError):
+                result = OllamaAnalysisResponse(**data)
+                logger.info("Image analysis complete — %s score: %s", path.name, result.overall_score)
+                return result
+            except (json.JSONDecodeError, ValidationError, KeyError, IndexError) as e:
+                logger.warning("Image analysis parse error attempt %d: %s", attempt + 1, e)
                 await asyncio.sleep(2 ** attempt)
                 if attempt == 2:
                     return DegradedAnalysisResponse()
-            except Exception:
+            except Exception as e:
+                logger.warning("Image analysis error attempt %d: %s", attempt + 1, e)
                 await asyncio.sleep(2 ** attempt)
                 if attempt == 2:
                     return DegradedAnalysisResponse()
