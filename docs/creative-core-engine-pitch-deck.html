@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=1440">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Creative Core Engine — Kochava</title>
 <style>
   :root {
@@ -23,6 +23,11 @@
     --yellow-light: #fdf8e6;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+  }
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
     background: var(--navy);
@@ -30,7 +35,12 @@
     font-size: 14px;
     line-height: 1.5;
   }
-  .deck { position: relative; }
+  .deck {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform-origin: top left;
+  }
   .slide {
     display: none;
     width: 1440px;
@@ -921,6 +931,23 @@
     if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next();
     if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') prev();
   });
+
+  const DESIGN_W = 1440;
+  const DESIGN_H = 820;
+
+  function scaleToFit() {
+    const deck = document.getElementById('deck');
+    const navH = 60;
+    const availW = window.innerWidth;
+    const availH = window.innerHeight - navH;
+    const scale = Math.min(availW / DESIGN_W, availH / DESIGN_H);
+    const leftOffset = Math.max(0, (availW - DESIGN_W * scale) / 2);
+    deck.style.transform = `scale(${scale})`;
+    deck.style.left = leftOffset + 'px';
+  }
+
+  scaleToFit();
+  window.addEventListener('resize', scaleToFit);
 </script>
 </body>
 </html>
